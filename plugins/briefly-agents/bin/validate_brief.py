@@ -14,9 +14,13 @@ except ImportError:
 
 
 def validate_brief(input_path: str) -> dict:
-    # Resolve schema path relative to this script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    schema_path = os.path.join(script_dir, "..", "templates", "brief-schema.json")
+    # Resolve schema path relative to plugin root
+    plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if plugin_root:
+        schema_path = os.path.join(plugin_root, "templates", "brief-schema.json")
+    else:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        schema_path = os.path.join(script_dir, "..", "templates", "brief-schema.json")
 
     try:
         with open(schema_path) as f:
