@@ -1,0 +1,26 @@
+{
+  "name": "inatanli-plugins",
+  "owner": {
+    "name": "inatanli"
+  },
+  "plugins": [
+    {
+      "name": "briefly-agents",
+      "source": "./plugins/briefly-agents",
+      "description": "A multi-agent system that generates research-backed creative briefs for Amazon product graphics. It coordinates specialized agents to conduct autonomous brand audits, competitor analysis, and product research, synthesizing data into a cohesive visual strategy.",
+      "version": "0.0.1",
+      "author": {
+        "name": "inatanli"
+      },
+      "keywords": [
+        "amazon",
+        "multi-agent",
+        "creative-brief",
+        "ecommerce",
+        "graphics",
+        "marketing",
+        "automation"
+      ]
+    }
+  ]
+}
