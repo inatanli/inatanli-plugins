@@ -1,0 +1,29 @@
+{
+  "name": "briefly-agents",
+  "version": "0.0.1",
+  "description": "A multi-agent system that generates research-backed creative briefs for Amazon product graphics. It coordinates specialized agents to conduct autonomous brand audits, competitor analysis, and product research, synthesizing data into a cohesive visual strategy.",
+  "author": {
+    "name": "inatanli"
+  },
+  "keywords": [
+    "amazon",
+    "multi-agent",
+    "creative-brief",
+    "ecommerce",
+    "graphics",
+    "marketing",
+    "automation"
+  ],
+  "userConfig": {
+    "DATAFORSEO_LOGIN": {
+      "type": "string",
+      "description": "DataForSEO API login email (find this in your DataForSEO dashboard)",
+      "sensitive": false
+    },
+    "DATAFORSEO_PASSWORD": {
+      "type": "string",
+      "description": "DataForSEO API password or API Key",
+      "sensitive": true
+    }
+  }
+}
