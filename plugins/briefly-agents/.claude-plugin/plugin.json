@@ -14,6 +14,8 @@
     "marketing",
     "automation"
   ],
+  "agents": "./agents",
+  "skills": "./skills",
   "userConfig": {
     "DATAFORSEO_LOGIN": {
       "type": "string",

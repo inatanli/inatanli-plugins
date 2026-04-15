@@ -25,7 +25,7 @@ All specialist agents must follow these rules. Since the Creative Director alway
 
 ### Prompt Format
 Text-to-image prompts use natural language, descriptive paragraphs (NOT keyword-style / Midjourney syntax). Each prompt must include:
-- Aspect ratio matching Amazon asset dimensions (see [../reference/asset-dimensions.md](../reference/asset-dimensions.md))
+- Aspect ratio matching Amazon asset dimensions (see [reference/asset-dimensions.md](../reference/asset-dimensions.md))
 - Resolution recommendation (2K for most assets)
 - Scene description, lighting, composition, style
 - Brand color references where applicable
