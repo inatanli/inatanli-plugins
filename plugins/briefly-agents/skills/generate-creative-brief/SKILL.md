@@ -72,13 +72,30 @@ Use the Python scripts (`fetch_product.py`, `get_competitors.py`, `get_keywords.
 
 If a script returns `"DataForSEO credentials not configured"`: inform the user that the brief will use web search as a fallback (lower data quality), and that they can add credentials via plugin settings to unlock full research. Then proceed with WebSearch/WebFetch.
 
-For each product, run the two agents sequentially in this order:
+If the product is not on Amazon and no inspo ASIN is provided, ask the user to provide product details and competitor ASINs manually.
 
-**Product Researcher** — Read [product-researcher.md](${CLAUDE_PLUGIN_ROOT}/agents/product-researcher.md)
+For each product, complete these steps in strict sequence. Do not start a step until the previous step has fully completed and returned its output.
+
+```
+Per-product research checklist:
+- [ ] Step 3a: Product Researcher — complete before proceeding
+- [ ] Step 3b: Competitor Analyst — depends on Step 3a completion
+- [ ] Step 3c: Present findings to user — depends on Step 3b completion
+- [ ] Step 3d: User confirms findings
+- [ ] Step 3e: Write JSON to disk — depends on Step 3d
+```
+
+### Step 3a: Product Researcher
+
+Read [product-researcher.md](${CLAUDE_PLUGIN_ROOT}/agents/product-researcher.md)
 - **Existing product mode:** fetches the client's listing via DataForSEO + pulls ranked keywords
 - **Inspo mode:** skips the product scrape (handled by Competitor Analyst) — runs keywords only on the inspo ASIN
 
-**Competitor Analyst** — Read [competitor-analyst.md](${CLAUDE_PLUGIN_ROOT}/agents/competitor-analyst.md)
+**Do not proceed to Step 3b until Step 3a has fully completed and returned its output.**
+
+### Step 3b: Competitor Analyst
+
+Read [competitor-analyst.md](${CLAUDE_PLUGIN_ROOT}/agents/competitor-analyst.md)
 - Gets competitors from DataForSEO via `get_competitors.py`
 - **Existing product mode:** skips first result (same as client product), batch-fetches ASINs 2–4
 - **Inspo mode:** batch-fetches all results (inspo product + its competitors form the full competitive landscape)
@@ -86,18 +103,66 @@ For each product, run the two agents sequentially in this order:
 
 If the user provides an ASIN or Amazon URL, run the Competitor Analyst — competitor analysis is not optional for Amazon products.
 
-If the product is not on Amazon and no inspo ASIN is provided, ask the user to provide product details and competitor ASINs manually.
+### Step 3c: Present Research Findings to User
 
-**Before moving on:** Present a summary of research findings (product details, competitor landscape, keywords) and ask the user to confirm or adjust. Embed product and competitor images inline using markdown (`![alt](url)`) so the user can visually review the listings. Then write updated JSON (with `research` filled in for this product) to disk.
+STOP here and present a summary to the user. This is a required checkpoint — do not skip it.
+
+Present:
+- Product details (name, price, rating, key features)
+- Product images — embed ALL image URLs inline using markdown (`![alt](url)`)
+- Keywords with search volumes and the visual implication summary
+- Competitor landscape — each competitor with name, price, rating, USPs, and ALL images inline (`![alt](url)`)
+- Gap analysis findings
+
+Ask the user: "Please review the research findings above. Confirm to proceed, or let me know what to adjust."
+
+**Do not proceed until the user explicitly confirms.**
+
+### Step 3e: Write Research to JSON
+
+Only after user confirmation, write updated JSON (with `research` filled in for this product) to disk.
 
 ## Phase 4: Creative Strategy (per product)
 
-**Creative Director** — Runs first. Read [creative-director.md](${CLAUDE_PLUGIN_ROOT}/agents/creative-director.md)
+Complete these steps in strict sequence for each product.
+
+```
+Per-product creative strategy checklist:
+- [ ] Step 4a: Creative Director — complete before proceeding
+- [ ] Step 4b: Present creative direction to user
+- [ ] Step 4c: User confirms creative direction
+- [ ] Step 4d: Run specialist agents — depends on Step 4c
+- [ ] Step 4e: Present specialist deliverables to user
+- [ ] Step 4f: User confirms specialist deliverables
+- [ ] Step 4g: Write JSON to disk — depends on Step 4f
+```
+
+### Step 4a: Creative Director
+
+Runs first. Read [creative-director.md](${CLAUDE_PLUGIN_ROOT}/agents/creative-director.md)
 - Receives all research + brand guidelines
 - Outputs unified product narrative and positioning strategy
 - Contains shared creative rules all specialists follow
 
-**Then run only the specialists matching the project scope:**
+**Do not proceed to specialists until Step 4b and 4c are complete.**
+
+### Step 4b: Present Creative Direction to User
+
+STOP here and present the creative direction to the user. This is a required checkpoint — do not skip it.
+
+Present:
+- Positioning statement
+- Key messages (with the research insight each is tied to)
+- Visual direction
+- Competitive differentiation strategy
+
+Ask the user: "Please review the creative direction above. Confirm to proceed to specialist deliverables, or let me know what to adjust."
+
+**Do not proceed until the user explicitly confirms.**
+
+### Step 4d: Run Specialists
+
+Only after user confirmation, run the specialists matching the project scope:
 
 | Deliverable requested | File to read |
 |---|---|
@@ -108,7 +173,24 @@ If the product is not on Amazon and no inspo ASIN is provided, ask the user to p
 
 Each specialist includes a `wireframe_description` field — a plain-text description of the wireframe layout (e.g., "Product centered at 85% frame, soft shadow beneath, white background, no text"). This generates the wireframe in Phase 5.
 
-**Before moving on:** Present the creative strategy (positioning, key messages, visual direction, deliverable concepts) and ask the user to confirm or adjust. Then write updated JSON (with `creative_direction` and `deliverables` filled in for this product) to disk.
+### Step 4e: Present Specialist Deliverables to User
+
+STOP here and present ALL specialist deliverables to the user. This is a required checkpoint — do not skip it.
+
+For each deliverable, present:
+- Visual concept
+- Copy (if applicable)
+- Text-to-image prompt
+- Strategic rationale (which research insight it addresses)
+- Wireframe description
+
+Ask the user: "Please review the specialist deliverables above. Confirm to proceed, or let me know what to adjust."
+
+**Do not proceed until the user explicitly confirms.**
+
+### Step 4g: Write Creative Strategy to JSON
+
+Only after user confirmation, write updated JSON (with `creative_direction` and `deliverables` filled in for this product) to disk.
 
 ## Phase 5: Validate + Generate
 
