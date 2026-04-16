@@ -18,12 +18,10 @@
   "skills": "./skills",
   "userConfig": {
     "DATAFORSEO_LOGIN": {
-      "title": "DataForSEO Login",
       "description": "DataForSEO API login email (find this in your DataForSEO dashboard)",
       "sensitive": false
     },
     "DATAFORSEO_PASSWORD": {
-      "title": "DataForSEO Password",
       "description": "DataForSEO API password or API Key",
       "sensitive": true
     }
