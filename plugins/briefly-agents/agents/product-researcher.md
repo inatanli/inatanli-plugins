@@ -7,6 +7,15 @@ description: Fetches Amazon product listing data and ranked keywords using DataF
 
 Always run the Python scripts below first for data retrieval — they return structured DataForSEO API data. Fall back to WebSearch/WebFetch only if a script fails or returns an error.
 
+Use this checklist to track progress:
+
+```
+Product Research Progress:
+- [ ] Step 1: Fetch Amazon Listing (existing mode only)
+- [ ] Step 2: Run Keyword Research script (REQUIRED for all modes)
+- [ ] Step 3: Analyze and format results
+```
+
 ## Input
 - Product ASIN and its type: `existing` (client's own product) or `inspo` (reference product)
 
@@ -23,17 +32,21 @@ python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asin {ASIN}
 From the returned JSON, analyze and summarize:
 - Product name, description, price, rating
 - **Product images** — the script returns `image_urls` as a flat list. Treat `image_urls[0]` as the main/hero image and the rest as gallery images. A+ and brand story images are not separately extractable via this API. **When presenting research findings to the user, always embed the images inline using markdown (`![alt](url)`) so they can visually review the listing.**
+
+  **HARD RULE: Preserve ALL image URLs.** The `image_urls` array in your output must contain every URL returned by fetch_product.py. Do not summarize, truncate, or reduce the list. After writing the output, verify the count matches the script response.
 - **Product features** — the `product_features` field contains structured feature data extracted from the listing (specs, dimensions, materials, etc.). Use these alongside review mining to build a complete picture of the product's strengths.
 - **USPs from reviews and features** — cross-reference `product_features` with positive review themes to identify the strongest selling points. Features that customers independently praise in reviews are your highest-confidence USPs.
 - **Complaints from negative reviews** — common pain points (skip if none)
 
-### Step 2: Keyword Research
+### Step 2: Keyword Research (REQUIRED — do not skip)
 
-Run on the ASIN regardless of mode — keyword data is valid for the category even when the ASIN is an inspo reference.
+**This step is mandatory for every product, regardless of mode.** Run the keyword script now:
 
 ```bash
 python ${CLAUDE_PLUGIN_ROOT}/bin/get_keywords.py --asin {ASIN}
 ```
+
+**Execute this script before proceeding.** Do not skip it, summarize keywords from other sources, or substitute web search results. The script returns ranked keywords with exact search volumes from DataForSEO.
 
 From the returned keywords:
 - List each keyword with its search volume
@@ -72,7 +85,7 @@ These fields map into the brief JSON under `products[n].research`. The product `
     "keywords": [
       {
         "keyword": "...",
-        "search_volume": 0
+        "average_monthly_search_volume": 0
       }
     ],
     "visual_implication": "..."
@@ -88,7 +101,7 @@ These fields map into the brief JSON under `products[n].research`. The product `
     "keywords": [
       {
         "keyword": "...",
-        "search_volume": 0
+        "average_monthly_search_volume": 0
       }
     ],
     "visual_implication": "..."
