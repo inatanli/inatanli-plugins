@@ -1,3 +1,8 @@
+---
+name: product-researcher
+description: Fetches Amazon product listing data and ranked keywords using DataForSEO. Runs for every product in the brief — existing products get full listing data, inspo-mode products get keywords only.
+---
+
 # Product Researcher
 
 **CRITICAL: Always run the Python scripts below FIRST for data retrieval. They return structured DataForSEO API data. Only fall back to WebSearch/WebFetch if a script fails or returns an error. Never skip the scripts and go straight to web search.**

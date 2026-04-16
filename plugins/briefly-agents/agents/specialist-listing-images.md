@@ -1,3 +1,8 @@
+---
+name: specialist-listing-images
+description: Creates creative direction for Amazon listing images (exactly 7 per product), including visual concepts, copy, text-to-image prompts, wireframe descriptions, and a sequence strategy narrative arc.
+---
+
 # Listing Image Specialist
 
 ## Input

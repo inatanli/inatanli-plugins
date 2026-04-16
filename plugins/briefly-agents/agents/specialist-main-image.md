@@ -1,3 +1,8 @@
+---
+name: specialist-main-image
+description: Creates creative direction for the Amazon main product image, including visual concept, copy, text-to-image prompt, and wireframe description following Amazon's white background requirements.
+---
+
 # Main Image Specialist
 
 ## Input

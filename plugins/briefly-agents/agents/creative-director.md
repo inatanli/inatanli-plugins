@@ -1,3 +1,8 @@
+---
+name: creative-director
+description: Synthesizes product research, competitor analysis, and brand guidelines into a unified creative strategy, positioning narrative, and visual direction for Amazon product graphics.
+---
+
 # Creative Strategy Director
 
 ## Input

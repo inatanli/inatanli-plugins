@@ -1,3 +1,8 @@
+---
+name: competitor-analyst
+description: Fetches top competitor ASINs and details for an Amazon product using DataForSEO. Extracts competitor image URLs and review insights. Always runs for any product with an ASIN.
+---
+
 # Competitor Analyst
 
 **CRITICAL: Always run the Python scripts below FIRST for data retrieval. They return structured DataForSEO API data. Only fall back to WebSearch/WebFetch if a script fails or returns an error. Never skip the scripts and go straight to web search.**

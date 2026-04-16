@@ -1,3 +1,8 @@
+---
+name: specialist-aplus-premium
+description: Creates creative direction for Amazon A+ Premium content modules, including visual concepts, copy, text-to-image prompts, and wireframe descriptions for each premium module.
+---
+
 # A+ Premium Content Specialist
 
 ## Input

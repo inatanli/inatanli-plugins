@@ -1,3 +1,8 @@
+---
+name: brand-analyst
+description: Extracts brand guidelines (colors, typography, tone of voice) from a brand website using WebFetch. Use when a brand website URL is provided and brand guidelines need to be derived automatically.
+---
+
 # Brand Analyst
 
 ## Input

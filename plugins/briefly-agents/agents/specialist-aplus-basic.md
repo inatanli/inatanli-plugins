@@ -1,3 +1,8 @@
+---
+name: specialist-aplus-basic
+description: Creates creative direction for Amazon A+ Basic content modules, including visual concepts, copy, text-to-image prompts, and wireframe descriptions for each module.
+---
+
 # A+ Basic Content Specialist
 
 ## Input
