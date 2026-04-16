@@ -759,11 +759,11 @@ function buildProduct(product, index) {
       const imgRows = 2;
       const imgCols = 4;
       const imgCount = Math.min(prodData.image_urls.length, 8);
-      
+
       // 1:1 square cells, slightly reduced to leave room for USPs
       const cellW = (leftW - 0.3) / imgCols * 0.92;
       const cellH = cellW; // 1:1 square
-      
+
       let imgX = MARGIN + 0.15;
       let imgY = infoY;
       let col = 0;
@@ -860,7 +860,7 @@ function buildProduct(product, index) {
       // 4 keywords max, then the visual_implication summary below
       const kwRuns = [];
       keywords.slice(0, 4).forEach((kw, i) => {
-        const vol = kw.search_volume ? `  —  ${Number(kw.search_volume).toLocaleString()} avg. monthly searches` : "";
+        const vol = kw.average_monthly_search_volume ? `  —  ${Number(kw.average_monthly_search_volume).toLocaleString()} avg. monthly searches` : "";
         if (i > 0) kwRuns.push({ text: "\n", options: { fontSize: 4 } });
         kwRuns.push({
           text: `${trunc(kw.keyword || "", 32)}${vol}\n`,
@@ -948,7 +948,7 @@ function buildProduct(product, index) {
 
     // Calculate how many competitors can fit per column
     const competitorsPerCol = Math.ceil(competitors.length / cols);
-    
+
     // Calculate card height based on available space
     const cardsInTallestCol = competitorsPerCol;
     const cardH = (AVAIL_H - cardGap * (cardsInTallestCol - 1)) / cardsInTallestCol;
@@ -970,7 +970,7 @@ function buildProduct(product, index) {
       // Determine column and row position
       const col = ci % cols;
       const row = Math.floor(ci / cols);
-      
+
       const x = MARGIN + col * (colW + colGap);
       const y = CONTENT_START_Y + row * (cardH + cardGap);
 
@@ -1079,7 +1079,7 @@ function buildProduct(product, index) {
         // Find the Y position for complaints (after USPs)
         const uspHeight = comp.usps?.length ? 0.22 + Math.min(0.8, cardH - innerY + y - 0.5) : 0;
         const complaintsY = innerY + uspHeight;
-        
+
         slide.addText("Complaints", {
           x: x + imgGridPadding, y: complaintsY, w: nameW, h: 0.22,
           fontSize: 9, fontFace: FONT.heading, color: "C62828", bold: true,
