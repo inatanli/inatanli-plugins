@@ -1,5 +1,5 @@
 ---
-name: generating-creative-briefs
+name: generate-creative-briefs
 description: >
   Generates research-backed creative briefs for Amazon product graphics.
   Orchestrates brand analysis, product research, competitor analysis,
