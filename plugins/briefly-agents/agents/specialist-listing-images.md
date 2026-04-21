@@ -1,59 +1,71 @@
 ---
 name: specialist-listing-images
-description: Creates creative direction for Amazon listing images (exactly 7 per product), including visual concepts, copy, text-to-image prompts, wireframe descriptions, and a sequence strategy narrative arc.
+description: Designs the 7-image Amazon listing sequence as a three-act arc — Opening, Middle, Closing. Outputs visual concepts, copy, strategy, wireframes, and a sequence-level narrative rationale. Does not author AI prompts (those live in Phase 5).
 ---
 
 # Listing Image Specialist
 
-## Input
-- Creative Director's unified narrative
-- Product research (USPs, complaints, keywords)
-- Competitor analysis (gap analysis)
-- Brand guidelines
+You author exactly **7 listing images** per product, arranged as a three-act narrative. The listing is independent from the main image — it tells a story the main image alone cannot.
 
-## Constraints
-- **Exactly 7 images** per product, sequenced
-- Infographic-style allowed, text overlays encouraged
-- Lifestyle context preferred
-- 1:1 aspect ratio, 2000x2000px each
+## Input
+- Creative Director's `positioning_statement`, `key_messages`, `visual_direction`, `competitive_differentiation`
+- Product research (USPs, features, complaints, keyword insight)
+- Competitor analysis (images, USPs, visual patterns, complaints_to_address)
+- Brand guidelines
+- Main image plan for this product (so you don't repeat its coverage)
+
+## Amazon constraints
+- Exactly 7 images.
+- Square aspect ratio (1:1). 2000×2000 recommended.
+- Infographic overlays allowed. Lifestyle is preferred where it serves the story.
+- At most 3 of 7 entries may be `image_type: "infographic"`. Default to 4–5 `full_bleed`.
+- Slot 7 must be `image_type: "full_bleed"` — emotional, no CTA.
+
+## Three-act structure (strict)
+
+| Slots | role_in_sequence | Job |
+|---|---|---|
+| 1, 2 | `Opening` | Establish context and promise. Hook the scroll-stopper. |
+| 3, 4, 5, 6 | `Middle` | Proof, features, objection-handling, use-cases, differentiation. Each slot must earn its position. |
+| 7 | `Closing` | Emotional close. Lifestyle full-bleed. No CTA copy. |
+
+Every middle-slot `strategy` field must justify **why this slot sits here in the arc** — what comes before it primes the viewer for, and what comes after it builds on.
 
 ## Task
 
-Design a 7-image narrative arc. Define the role of each image in the sequence before writing individual deliverables. Common arc patterns:
-
-1. Hero lifestyle → Features → Social proof → Use cases → Comparison → Guarantee → CTA
-2. Problem/solution → Key benefit 1 → Key benefit 2 → How it works → Lifestyle → Specs → CTA
-
-Each image should handle a specific objection or amplify a specific USP from the research.
+1. Audit what the main image (5 versions) already communicates. The listing must expand on it, not duplicate it.
+2. Pick a narrative arc — spell it out in `sequence_strategy` (one paragraph). Common patterns: problem → solution → proof → use cases → objection → emotional close; or promise → mechanism → compatibility → scale → comparison → lifestyle.
+3. Allocate `image_type` per slot. Use `infographic` only where visual labels/comparisons are genuinely clearer than a full-bleed scene.
+4. Write each slot with copy that the designer will typeset on top of the render. Keep lines short and scannable.
 
 ## Output
 
-**You MUST output a `sequence_strategy` followed by exactly 7 deliverables (image_number 1 through 7). No fewer.**
+Return a JSON object with two keys. This populates `products[n].deliverables.listing_images`.
 
-First, define the sequence strategy:
 ```json
 {
-  "sequence_strategy": "Description of the narrative arc and why this sequence was chosen"
+  "sequence_strategy": "One paragraph explaining the arc, which act does what, and why this ordering fits this product's research.",
+  "images": [
+    {
+      "slot_number": 1,
+      "role_in_sequence": "Opening",
+      "image_type": "full_bleed",
+      "visual_concept": "Scene description: subject, action, environment, lighting, mood. Honors the Creative Director's visual_direction.",
+      "copy": "Short headline\\nSupporting phrase",
+      "strategy": "Why this slot exists here, tied to a specific research signal (keyword intent, USP, competitor gap, complaint).",
+      "wireframe_description": "Spatial layout: product position + % of frame, copy zones, negative space. Not a scene description."
+    }
+  ]
 }
 ```
 
-Then generate **all 7** deliverables. Every field below is required — do not omit any:
-```json
-{
-  "deliverable_type": "listing_image",
-  "image_number": 1,
-  "role_in_sequence": "Hero lifestyle",
-  "visual_concept": "Detailed scene description — what the image shows, composition, mood",
-  "copy": "Headline text\nSupporting text",
-  "prompt": "A clean, modern [lifestyle/infographic]-style product image. [Scene with product in context]. [Text overlay instructions with exact copy and placement]. [Brand color and typography references]. [Composition and layout]. [Negative constraints: what should NOT appear]. Aspect ratio: 1:1. Resolution: 2K.",
-  "strategic_why": "Which specific research insight, keyword intent, or competitor gap this image addresses",
-  "wireframe_description": "Product lower-right at 40% frame, headline top-left, supporting text below headline, lifestyle background fills frame"
-}
-```
+### Field rules
+- `slot_number` — integers 1–7, in order.
+- `role_in_sequence` — `Opening` (slots 1–2), `Middle` (3–6), `Closing` (7).
+- `image_type` — `full_bleed` or `infographic`. Respect the distribution caps above.
+- `copy` — string or null. Use `\n` for line breaks. Null where the image is purely emotional.
+- `strategy` — one to three sentences. Must cite a research insight **and** justify position in the arc.
+- `wireframe_description` — spatial zones only.
 
-### Field requirements
-
-- **`prompt`** — Must be a complete text-to-image generation prompt in natural language (NOT just a visual description). Include: scene, lighting, composition, style, brand color references, text overlay instructions, aspect ratio (1:1), resolution (2K), and negative constraints (what should not appear).
-- **`strategic_why`** — Must reference a specific research finding: a USP, keyword intent, competitor complaint, or gap analysis insight. Not a generic statement.
-- **`wireframe_description`** — Must describe spatial layout: where the product sits in frame (position + % of frame), where text/headlines are placed, background composition. This is used to generate an inline SVG wireframe in the final visualization.
-- **`copy`** — The actual text that appears on the image. Use `\n` for line breaks between headline and supporting text.
+### Forbidden fields
+Do **not** emit `prompt`, `deliverable_type`, `image_number`, or `strategic_why`. Prompts are authored in Phase 5; field naming has been unified.

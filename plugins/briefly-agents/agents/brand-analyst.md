@@ -24,7 +24,6 @@ Fetch the website using WebFetch (the brand site is public — no scraping servi
 1. **Colors** — Pull from CSS stylesheets, meta theme-color, and visual elements. Identify primary, secondary, and accent colors with hex values.
 2. **Typography** — Identify font families from CSS `font-family` declarations and Google Fonts/Adobe Fonts links.
 3. **Tone of Voice** — Analyze headline copy, taglines, and product descriptions.
-4. **Visual Style** — Note photography style, lifestyle vs. studio shots, color treatment patterns.
 
 If the website is inaccessible, note the failure and continue with other available inputs.
 
@@ -38,8 +37,7 @@ Read and structure the guidelines. Do not just pass them through — actively an
 Read each image file using the Read tool (supports PNG, JPG, PDF). Analyze visually:
 1. **Color Palette** — Dominant and accent colors across all images; estimate hex values
 2. **Typography** — Any visible typefaces; classify as serif, sans-serif, script, etc.
-3. **Visual Aesthetic** — Mood, energy, production style, recurring compositional patterns
-4. **Tone Cues** — What the imagery communicates emotionally (e.g., premium, approachable, bold, minimal)
+3. **Tone Cues** — What the imagery communicates emotionally (e.g., premium, approachable, bold, minimal)
 
 ### Synthesis
 When multiple input types are available, cross-reference them. Where they conflict, surface the discrepancy with concrete options for the user to choose from — for example: "Your brand guidelines say the primary color is navy (#003366), but the mood board images lean more toward cobalt blue (#1A5CFF). Which should we use? A) Navy (#003366) from your guidelines, B) Cobalt blue (#1A5CFF) from the mood board, C) Something else?"
@@ -59,12 +57,10 @@ Do not silently resolve conflicts with your own judgment.
     },
     "typography": {
       "heading_font": "Font Name",
-      "body_font": "Font Name",
-      "style_notes": "..."
+      "body_font": "Font Name"
     },
     "tone_of_voice": "...",
     "brand_descriptors": ["word1", "word2", "word3"],
-    "visual_style": "...",
     "target_demographic": "..."
   }
 }

@@ -34,8 +34,7 @@ From the returned JSON, analyze and summarize:
 - **Product images** — the script returns `image_urls` as a flat list. Treat `image_urls[0]` as the main/hero image and the rest as gallery images. A+ and brand story images are not separately extractable via this API. **When presenting research findings to the user, always embed the images inline using markdown (`![alt](url)`) so they can visually review the listing.**
 
   **HARD RULE: Preserve ALL image URLs.** The `image_urls` array in your output must contain every URL returned by fetch_product.py. Do not summarize, truncate, or reduce the list. After writing the output, verify the count matches the script response.
-- **Product features** — the `product_features` field contains structured feature data extracted from the listing (specs, dimensions, materials, etc.). Use these alongside review mining to build a complete picture of the product's strengths.
-- **USPs from reviews and features** — cross-reference `product_features` with positive review themes to identify the strongest selling points. Features that customers independently praise in reviews are your highest-confidence USPs.
+- **USPs from listing and reviews** — analyze the listing's bullet points and title alongside positive review themes to identify the strongest selling points. Claims that customers independently echo in reviews are your highest-confidence USPs.
 - **Complaints from negative reviews** — common pain points (skip if none)
 
 ### Step 2: Keyword Research (REQUIRED — do not skip)
@@ -78,7 +77,6 @@ These fields map into the brief JSON under `products[n].research`. The product `
       "price": "...",
       "rating": "...",
       "image_urls": ["..."],
-      "product_features": ["..."],
       "usps": ["..."],
       "complaints": ["..."]
     },

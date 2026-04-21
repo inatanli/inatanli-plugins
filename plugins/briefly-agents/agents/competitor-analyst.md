@@ -71,6 +71,7 @@ All script failures: retry once before applying the behavior below.
 
 | Scenario | Behavior |
 |---|---|
+| DataForSEO credentials not configured | Inform the user the brief will use web search as a fallback (lower data quality) and that they can add credentials via plugin settings to unlock full research. Then proceed with WebSearch/WebFetch. |
 | DataForSEO task creation failure | Ask user to provide competitor ASINs manually |
 | DataForSEO task polling timeout | Ask user for manual input |
 | DataForSEO API failure (other) | Skip competitor data and note gap in brief |
