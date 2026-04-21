@@ -6,6 +6,94 @@
     "brand",
     "products"
   ],
+  "$defs": {
+    "visualDirection": {
+      "type": "object",
+      "required": [
+        "color_world",
+        "lighting_signature",
+        "model_direction",
+        "prop_styling",
+        "environment_surface_direction",
+        "mood"
+      ],
+      "properties": {
+        "color_world": {
+          "type": "string"
+        },
+        "lighting_signature": {
+          "type": "string"
+        },
+        "model_direction": {
+          "type": "string"
+        },
+        "prop_styling": {
+          "type": "string"
+        },
+        "environment_surface_direction": {
+          "type": "string"
+        },
+        "mood": {
+          "type": "string"
+        }
+      }
+    },
+    "shotOptionArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "option_id",
+          "prompt",
+          "lighting",
+          "shadows",
+          "surface_material",
+          "color_temperature",
+          "aspect_ratio",
+          "fits_deliverables"
+        ],
+        "properties": {
+          "option_id": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "lighting": {
+            "type": "string"
+          },
+          "shadows": {
+            "type": "string"
+          },
+          "surface_material": {
+            "type": "string"
+          },
+          "color_temperature": {
+            "type": "string"
+          },
+          "aspect_ratio": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "camera": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fits_deliverables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
   "properties": {
     "brand": {
       "type": "object",
@@ -64,9 +152,6 @@
                 },
                 "body_font": {
                   "type": "string"
-                },
-                "style_notes": {
-                  "type": "string"
                 }
               }
             },
@@ -113,9 +198,11 @@
         "required": [
           "name",
           "asin",
+          "type",
           "research",
           "creative_direction",
-          "deliverables"
+          "deliverables",
+          "shot_list"
         ],
         "properties": {
           "name": {
@@ -126,6 +213,13 @@
           },
           "url": {
             "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "existing",
+              "new"
+            ]
           },
           "research": {
             "type": "object",
@@ -158,12 +252,6 @@
                       "type": "string"
                     },
                     "minItems": 1
-                  },
-                  "product_features": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
                   },
                   "usps": {
                     "type": "array",
@@ -297,6 +385,12 @@
           },
           "creative_direction": {
             "type": "object",
+            "required": [
+              "positioning_statement",
+              "key_messages",
+              "visual_direction",
+              "competitive_differentiation"
+            ],
             "properties": {
               "positioning_statement": {
                 "type": "string"
@@ -308,7 +402,7 @@
                 }
               },
               "visual_direction": {
-                "type": "string"
+                "$ref": "#/$defs/visualDirection"
               },
               "competitive_differentiation": {
                 "type": "string"
@@ -320,128 +414,92 @@
             "properties": {
               "main_image": {
                 "type": [
-                  "object",
-                  "null"
-                ],
-                "properties": {
-                  "visual_concept": {
-                    "type": "string"
-                  },
-                  "copy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "prompt": {
-                    "type": "string"
-                  },
-                  "strategic_why": {
-                    "type": "string"
-                  },
-                  "wireframe_description": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "visual_concept",
-                  "prompt",
-                  "strategic_why",
-                  "wireframe_description"
-                ]
-              },
-              "listing_images": {
-                "type": [
                   "array",
                   "null"
                 ],
+                "minItems": 5,
+                "maxItems": 5,
                 "items": {
                   "type": "object",
                   "required": [
-                    "image_number",
-                    "role_in_sequence",
+                    "version_number",
+                    "strategy_name",
+                    "feature",
+                    "strategy",
                     "visual_concept",
-                    "prompt",
-                    "strategic_why",
                     "wireframe_description"
                   ],
                   "properties": {
-                    "image_number": {
+                    "version_number": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 7
+                      "maximum": 5
                     },
-                    "role_in_sequence": {
+                    "strategy_name": {
+                      "type": "string"
+                    },
+                    "feature": {
+                      "type": "string"
+                    },
+                    "strategy": {
                       "type": "string"
                     },
                     "visual_concept": {
-                      "type": "string"
-                    },
-                    "copy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "prompt": {
-                      "type": "string"
-                    },
-                    "strategic_why": {
                       "type": "string"
                     },
                     "wireframe_description": {
                       "type": "string"
                     }
                   }
-                },
-                "minItems": 7,
-                "maxItems": 7
+                }
               },
-              "aplus_basic": {
+              "listing_images": {
                 "type": [
                   "object",
                   "null"
                 ],
+                "required": [
+                  "sequence_strategy",
+                  "images"
+                ],
                 "properties": {
-                  "module_layout": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "required": [
-                        "position",
-                        "module_type"
-                      ],
-                      "properties": {
-                        "position": {
-                          "type": "integer"
-                        },
-                        "module_type": {
-                          "type": "string"
-                        },
-                        "purpose": {
-                          "type": "string"
-                        }
-                      }
-                    }
+                  "sequence_strategy": {
+                    "type": "string"
                   },
-                  "modules": {
+                  "images": {
                     "type": "array",
+                    "minItems": 7,
+                    "maxItems": 7,
                     "items": {
                       "type": "object",
                       "required": [
-                        "module_type",
-                        "position",
+                        "slot_number",
+                        "role_in_sequence",
+                        "image_type",
                         "visual_concept",
-                        "prompt",
-                        "strategic_why",
+                        "strategy",
                         "wireframe_description"
                       ],
                       "properties": {
-                        "module_type": {
-                          "type": "string"
+                        "slot_number": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 7
                         },
-                        "position": {
-                          "type": "integer"
+                        "role_in_sequence": {
+                          "type": "string",
+                          "enum": [
+                            "Opening",
+                            "Middle",
+                            "Closing"
+                          ]
+                        },
+                        "image_type": {
+                          "type": "string",
+                          "enum": [
+                            "full_bleed",
+                            "infographic"
+                          ]
                         },
                         "visual_concept": {
                           "type": "string"
@@ -452,10 +510,7 @@
                             "null"
                           ]
                         },
-                        "prompt": {
-                          "type": "string"
-                        },
-                        "strategic_why": {
+                        "strategy": {
                           "type": "string"
                         },
                         "wireframe_description": {
@@ -466,94 +521,172 @@
                   }
                 }
               },
-              "aplus_premium": {
+              "aplus": {
                 "type": [
                   "object",
                   "null"
                 ],
+                "required": [
+                  "modules"
+                ],
                 "properties": {
-                  "module_layout": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "required": [
-                        "position",
-                        "module_type"
-                      ],
-                      "properties": {
-                        "position": {
-                          "type": "integer"
-                        },
-                        "module_type": {
-                          "type": "string"
-                        },
-                        "purpose": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
                   "modules": {
                     "type": "array",
+                    "minItems": 6,
+                    "maxItems": 6,
                     "items": {
                       "type": "object",
                       "required": [
-                        "module_type",
-                        "position",
+                        "module_number",
+                        "module_role",
+                        "dimensions",
                         "visual_concept",
-                        "prompt",
-                        "strategic_why",
+                        "copy",
+                        "strategy",
                         "wireframe_description"
                       ],
                       "properties": {
-                        "module_type": {
-                          "type": "string"
+                        "module_number": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 6
                         },
-                        "position": {
-                          "type": "integer"
+                        "module_role": {
+                          "type": "string",
+                          "enum": [
+                            "hero_with_icons",
+                            "expand_or_deepen",
+                            "new_territory",
+                            "bridge_to_close",
+                            "brand_closing"
+                          ]
+                        },
+                        "dimensions": {
+                          "type": "string",
+                          "enum": [
+                            "1464x1200",
+                            "1464x600"
+                          ]
                         },
                         "visual_concept": {
                           "type": "string"
                         },
                         "copy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "prompt": {
-                          "type": "string"
-                        },
-                        "strategic_why": {
-                          "type": "string"
-                        },
-                        "wireframe_description": {
-                          "type": "string"
-                        },
-                        "interaction_points": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "label": {
-                                "type": "string"
-                              },
-                              "description": {
-                                "type": "string"
-                              },
-                              "position_hint": {
-                                "type": "string"
+                          "type": "object",
+                          "properties": {
+                            "tagline": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "product_name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "icons": {
+                              "type": [
+                                "array",
+                                "null"
+                              ],
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "label",
+                                  "description"
+                                ],
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  }
+                                }
                               }
+                            },
+                            "headline": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "body": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
                             }
                           }
+                        },
+                        "strategy": {
+                          "type": "string"
+                        },
+                        "wireframe_description": {
+                          "type": "string"
                         }
                       }
                     }
                   }
                 }
+              }
+            }
+          },
+          "shot_list": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "visual_dna",
+              "shots_by_type"
+            ],
+            "properties": {
+              "visual_dna": {
+                "$ref": "#/$defs/visualDirection"
+              },
+              "shots_by_type": {
+                "type": "object",
+                "properties": {
+                  "studio_plain": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "studio_styled": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "lifestyle_tight": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "lifestyle_wide": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "action_wide": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "action_tight": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "group_kit": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "packaging": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  },
+                  "detail_closeup": {
+                    "$ref": "#/$defs/shotOptionArray"
+                  }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -568,6 +701,15 @@
         },
         "version": {
           "type": "string"
+        },
+        "agency_name": {
+          "type": "string"
+        },
+        "phases_completed": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
         }
       }
     }
