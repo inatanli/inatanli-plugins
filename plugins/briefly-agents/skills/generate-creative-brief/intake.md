@@ -40,11 +40,10 @@ Note: brand analysis always runs in Phase 2, regardless of how guidelines are so
   - **Existing product:** ASIN (required), product name, product description (key features, target use case)
   - **New product:** product name, description, USPs, target audience, and optionally an inspo ASIN
   - Variations or base only?
-- **Deliverables per product:**
-  - Main Image
+- **Deliverables per product** (any combination of these three):
+  - Main Image (5 versions per product)
   - Listing Images (7 per product)
-  - A+ Basic Content
-  - A+ Premium Content
+  - A+ Content (6 modules per product)
 
 ## Recap Format
 
@@ -60,7 +59,7 @@ After collecting everything, present a structured recap:
 **Products:**
 1. [Product name] — [ASIN if provided] ([existing / inspo / manual])
    - Description: [product description]
-   - Deliverables: [Main Image, Listing Images, A+ Basic, A+ Premium]
+   - Deliverables: [Main Image, Listing Images, A+]
 2. [Product name] — [ASIN if provided] ([existing / inspo / manual])
    - Description: [product description]
    - Deliverables: [...]
