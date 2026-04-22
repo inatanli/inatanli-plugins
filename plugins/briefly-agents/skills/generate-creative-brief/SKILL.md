@@ -51,7 +51,7 @@ Run partial validation after each phase write: `python ${CLAUDE_PLUGIN_ROOT}/bin
 
 Read [intake.md](${CLAUDE_PLUGIN_ROOT}/skills/generate-creative-brief/intake.md) for the conversation flow.
 
-Collect brand info, products, and deliverables scope (Main Image / Listing Images / A+). Present as a batch, then follow up on missing items. End with a recap for user confirmation.
+Collect brand info, products, and deliverables scope (Main Image / Listing Images / A+) one question at a time, following the order in intake.md. End with a recap for user confirmation.
 
 Before moving on: present a summary of everything collected and ask the user to confirm. Then write the initial JSON stub to disk.
 
