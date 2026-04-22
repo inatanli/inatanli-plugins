@@ -152,11 +152,11 @@ After user confirmation, run the specialists matching project scope. Each reads 
 | Listing Images | [specialist-listing-images.md](${CLAUDE_PLUGIN_ROOT}/agents/specialist-listing-images.md) |
 | A+ | [specialist-aplus.md](${CLAUDE_PLUGIN_ROOT}/agents/specialist-aplus.md) |
 
-Specialists produce `visual_concept`, `strategy`, and `wireframe_description` per deliverable. They do **not** author text-to-image prompts — those come from Phase 5.
+Specialists produce `visual_concept` and `strategy` per deliverable. They do **not** author text-to-image prompts — those come from Phase 5.
 
 ### Step 4e: Present specialist deliverables
 
-For each deliverable, present: visual concept, copy (if applicable), strategic rationale, wireframe description.
+For each deliverable, present: visual concept, copy (if applicable), and strategic rationale.
 
 Ask: "Please review the specialist deliverables above. Confirm to proceed, or let me know what to adjust." Do not proceed until the user confirms.
 
