@@ -25,7 +25,7 @@ Return your creative direction as JSON. This populates `products[n].creative_dir
 
 ```json
 {
-  "positioning_statement": "One paragraph defining how this product should be perceived relative to competitors.",
+  "positioning_statement": "2–3 sentences, ≤60 words. Define how this product should be perceived relative to competitors.",
   "key_messages": [
     "Message 1 — tied to a specific research insight",
     "Message 2 — tied to a specific research insight",
@@ -39,12 +39,12 @@ Return your creative direction as JSON. This populates `products[n].creative_dir
     "environment_surface_direction": "…",
     "mood": "…"
   },
-  "competitive_differentiation": "What makes our visual approach different from competitors, grounded in gap analysis and keyword overlap intensity."
+  "competitive_differentiation": "≤60 words. Name specific competitor patterns and the visual move that differentiates."
 }
 ```
 
-- `key_messages`: 3–5 items, each tied to a specific research insight (USP, keyword, competitor gap).
-- `visual_direction`: six narrative fields (see below). Write each as a short paragraph — not a keyword list.
+- `key_messages`: 3–5 items, each tied to a specific research insight (USP, keyword, competitor gap). Each message: headline-weight sentence + one supporting clause. ≤30 words per message.
+- `visual_direction`: six narrative fields (see below). Write each as 1-2 dense sentences (≤45 words) — be highly specific for prompt generation, but keep it brief enough for presentation slides.
 
 ### Visual direction fields
 
