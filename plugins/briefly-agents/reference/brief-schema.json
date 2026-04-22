@@ -7,6 +7,43 @@
     "products"
   ],
   "$defs": {
+    "copyBlock": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Select only fields applicable to the image type and visual concept. Not all fields are required — an image may have just a heading and subheading with no bullet points.",
+      "properties": {
+        "heading": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Hero headline or main hook. Bold, benefit-driven statement that captures attention in under 2 seconds.",
+          "maxLength": 80
+        },
+        "subheading": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Supporting context, emotional appeal, or explanation of the 'how'. Max 1-2 concise sentences.",
+          "maxLength": 250
+        },
+        "bullet_points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Specific technical callouts, specs, proof points, or trust signals. Fragment sentences preferred. Select from: technical specs, dimensions/capacity, material/construction, usage/compatibility, safety/certifications, maintenance/care, social proof, environmental impact, performance metrics — only what is applicable.",
+          "maxItems": 5,
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      }
+    },
     "visualDirection": {
       "type": "object",
       "required": [
@@ -96,43 +133,6 @@
               "type": "string"
             }
           }
-        }
-      }
-    }
-  },
-  "copyBlock": {
-    "type": [
-      "object",
-      "null"
-    ],
-    "description": "Unified copy block. Select only fields applicable to the image type and visual concept. Not all fields are required — an image may have just a heading and subheading with no bullet points.",
-    "properties": {
-      "heading": {
-        "type": [
-          "string",
-          "null"
-        ],
-        "description": "Hero headline or main hook. Bold, benefit-driven statement that captures attention in under 2 seconds.",
-        "maxLength": 80
-      },
-      "subheading": {
-        "type": [
-          "string",
-          "null"
-        ],
-        "description": "Supporting context, emotional appeal, or explanation of the 'how'. Max 1-2 concise sentences.",
-        "maxLength": 250
-      },
-      "bullet_points": {
-        "type": [
-          "array",
-          "null"
-        ],
-        "description": "Specific technical callouts, specs, proof points, or trust signals. Fragment sentences preferred. Select from: technical specs, dimensions/capacity, material/construction, usage/compatibility, safety/certifications, maintenance/care, social proof, environmental impact, performance metrics — only what is applicable.",
-        "maxItems": 5,
-        "items": {
-          "type": "string",
-          "maxLength": 100
         }
       }
     }
@@ -301,7 +301,8 @@
                     "items": {
                       "type": "string"
                     },
-                    "minItems": 1
+                    "minItems": 1,
+                    "maxItems": 5
                   },
                   "complaints": {
                     "type": "array",
@@ -361,7 +362,8 @@
                       "type": "array",
                       "items": {
                         "type": "string"
-                      }
+                      },
+                      "maxItems": 5
                     },
                     "complaints": {
                       "type": "array",
@@ -492,11 +494,11 @@
                     },
                     "strategy": {
                       "type": "string",
-                      "maxLength": 320
+                      "maxLength": 400
                     },
                     "visual_concept": {
                       "type": "string",
-                      "maxLength": 400
+                      "maxLength": 600
                     }
                   }
                 }
@@ -550,14 +552,15 @@
                           ]
                         },
                         "visual_concept": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 600
                         },
                         "copy": {
                           "$ref": "#/$defs/copyBlock"
                         },
                         "strategy": {
                           "type": "string",
-                          "maxLength": 320
+                          "maxLength": 400
                         }
                       }
                     }
@@ -585,8 +588,7 @@
                         "dimensions",
                         "visual_concept",
                         "copy",
-                        "strategy",
-                        "wireframe_description"
+                        "strategy"
                       ],
                       "properties": {
                         "module_number": {
@@ -612,17 +614,15 @@
                           ]
                         },
                         "visual_concept": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 600
                         },
                         "copy": {
                           "$ref": "#/$defs/copyBlock"
                         },
                         "strategy": {
                           "type": "string",
-                          "maxLength": 320
-                        },
-                        "wireframe_description": {
-                          "type": "string"
+                          "maxLength": 400
                         }
                       }
                     }
@@ -630,75 +630,75 @@
                 }
               }
             }
-          },
-          "shot_list": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "required": [
-              "visual_dna",
-              "shots_by_type"
-            ],
-            "properties": {
-              "visual_dna": {
-                "$ref": "#/$defs/visualDirection"
-              },
-              "shots_by_type": {
-                "type": "object",
-                "properties": {
-                  "studio_plain": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "studio_styled": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "lifestyle_tight": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "lifestyle_wide": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "action_wide": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "action_tight": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "group_kit": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "packaging": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  },
-                  "detail_closeup": {
-                    "$ref": "#/$defs/shotOptionArray"
-                  }
+          }
+        },
+        "shot_list": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "required": [
+            "visual_dna",
+            "shots_by_type"
+          ],
+          "properties": {
+            "visual_dna": {
+              "$ref": "#/$defs/visualDirection"
+            },
+            "shots_by_type": {
+              "type": "object",
+              "properties": {
+                "studio_plain": {
+                  "$ref": "#/$defs/shotOptionArray"
                 },
-                "additionalProperties": false
-              }
+                "studio_styled": {
+                  "$ref": "#/$defs/shotOptionArray"
+                },
+                "lifestyle_tight": {
+                  "$ref": "#/$defs/shotOptionArray"
+                },
+                "lifestyle_wide": {
+                  "$ref": "#/$defs/shotOptionArray"
+                },
+                "action_wide": {
+                  "$ref": "#/$defs/shotOptionArray"
+                },
+                "action_tight": {
+                  "$ref": "#/$defs/shotOptionArray"
+                },
+                "group_kit": {
+                  "$ref": "#/$defs/shotOptionArray"
+                },
+                "packaging": {
+                  "$ref": "#/$defs/shotOptionArray"
+                },
+                "detail_closeup": {
+                  "$ref": "#/$defs/shotOptionArray"
+                }
+              },
+              "additionalProperties": false
             }
           }
         }
       }
-    },
-    "metadata": {
-      "type": "object",
-      "properties": {
-        "generated_date": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "agency_name": {
-          "type": "string"
-        },
-        "phases_completed": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          }
+    }
+  },
+  "metadata": {
+    "type": "object",
+    "properties": {
+      "generated_date": {
+        "type": "string"
+      },
+      "version": {
+        "type": "string"
+      },
+      "agency_name": {
+        "type": "string"
+      },
+      "phases_completed": {
+        "type": "array",
+        "items": {
+          "type": "integer"
         }
       }
     }
