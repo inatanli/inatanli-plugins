@@ -26,7 +26,7 @@ Product Research Progress:
 **Existing product mode only.** Skip this step entirely for inspo mode — the inspo ASIN is handled by the Competitor Analyst.
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asin {ASIN}
+python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asin {ASIN} --marketplace {MARKETPLACE}
 ```
 
 From the returned JSON, analyze and summarize:
@@ -42,14 +42,14 @@ From the returned JSON, analyze and summarize:
 **This step is mandatory for every product, regardless of mode.** Run the keyword script now:
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/bin/get_keywords.py --asin {ASIN}
+python ${CLAUDE_PLUGIN_ROOT}/bin/get_keywords.py --asin {ASIN} --marketplace {MARKETPLACE}
 ```
 
 **Execute this script before proceeding.** Do not skip it, summarize keywords from other sources, or substitute web search results. The script returns ranked keywords with exact search volumes from DataForSEO.
 
 From the returned keywords:
 - List each keyword with its search volume
-- After reviewing all keywords as a whole, write a single `visual_implication` — what does the overall keyword set tell us about what shoppers want to see in the images?
+- After reviewing all keywords as a whole, write a single `visual_implication` (≤50 words) — what does the overall keyword set tell us about what shoppers want to see in the images?
 
 ## Error Handling
 
