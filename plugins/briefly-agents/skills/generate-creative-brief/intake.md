@@ -36,6 +36,11 @@ Present these as a batch after the opening question, then follow up on anything 
 Note: brand analysis always runs in Phase 2, regardless of how guidelines are sourced. Provided guidelines are analyzed and structured, not just passed through.
 
 ### Project Scope
+- **Amazon Marketplace** — which marketplace is this product sold on? Present as a choice:
+  > US (United States) · CA (Canada) · GB (United Kingdom) · AU (Australia) · DE (Germany) · FR (France) · IT (Italy) · ES (Spain) · JP (Japan) · MX (Mexico) · IN (India) · BR (Brazil) · NL (Netherlands) · SE (Sweden) · PL (Poland) · BE (Belgium) · SG (Singapore) · SA (Saudi Arabia) · AE (United Arab Emirates) · TR (Turkiye) · EG (Egypt)
+
+  Default to **US** if the user doesn't specify. Store the ISO code (e.g. `US`, `CA`, `GB`). All API calls for this brief use this marketplace.
+
 - **Products** — for each product, collect based on product type:
   - **Existing product:** ASIN (required), product name, product description (key features, target use case)
   - **New product:** product name, description, USPs, target audience, and optionally an inspo ASIN
@@ -53,6 +58,7 @@ After collecting everything, present a structured recap:
 ## Project Recap
 
 **Brand:** [name]
+**Marketplace:** [e.g. US — United States]
 **Website:** [url or "not provided"]
 **Brand Inputs:** [website URL / mood board images / provided guidelines / collected in intake]
 
