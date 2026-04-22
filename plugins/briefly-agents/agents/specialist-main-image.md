@@ -61,6 +61,18 @@ Return a JSON array of exactly 5 objects. This populates `products[n].deliverabl
 ### Forbidden fields
 Do **not** emit `prompt`, `copy`, or `strategic_why`. Prompts belong to the shot-list-director in Phase 5; `copy` is always null for main image; `strategic_why` has been renamed to `strategy`.
 
+### Example (quality bar)
+
+<example>
+{
+  "version_number": 2,
+  "strategy_name": "Ingredient / Contents Reveal",
+  "feature": "Cold-pressed organic rosehip oil",
+  "strategy": "Top keyword 'rosehip oil for face' (18k/mo) shows shoppers want to see the raw ingredient, not just the bottle. Two of three top competitors show only the bottle — surfacing the actual botanical source closes that gap.",
+  "visual_concept": "Amber glass dropper bottle positioned three-quarter on pure white, with fresh rosehips and a single cold-pressed oil droplet caught mid-fall beside it. Soft directional key from camera right; warm 3200K. Shadow anchors the bottle without competing. Product fills ~85% of frame; label and dropper neck legible at 150 px. 3D-render quality, crisp edges."
+}
+</example>
+
 ---
 
 ## Main Image Strategy Inventory
