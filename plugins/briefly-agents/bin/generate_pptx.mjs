@@ -123,7 +123,7 @@ const FONT = {
 // ── Presentation instance ───────────────────────────────────────────────────
 const pptx = new PptxGenJS();
 pptx.layout = "LAYOUT_WIDE";
-pptx.author = "Creative Brief Agent";
+pptx.author = "Scalene Design";
 pptx.subject = `Creative Brief — ${brand.name || "Brand"}`;
 
 // ── Slide masters ────────────────────────────────────────────────────────────
@@ -169,25 +169,6 @@ function addVerticalDivider(slide, x, y, h, color) {
   });
 }
 
-function addAccentCallout(slide, label, body, x, y, w, h, accentColor) {
-  const barW = 0.07;
-  const ac = accentColor || COLOR.accent || COLOR.primary;
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x, y, w: barW, h,
-    fill: { color: ac }, line: { color: ac },
-  });
-  const tx = x + barW + 0.1;
-  const tw = w - barW - 0.1;
-  if (label) addSectionLabel(slide, label, tx, y + 0.06, tw);
-  if (body) {
-    slide.addText(body, {
-      x: tx, y: y + (label ? 0.3 : 0.08), w: tw, h: h - (label ? 0.36 : 0.14),
-      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText,
-      valign: "top", shrinkText: true,
-    });
-  }
-}
-
 function addTypographicTile(slide, label, value, x, y, w, h) {
   addDivider(slide, x, y, w, COLOR.midGray, 0.5);
   addSectionLabel(slide, label, x, y + 0.08, w);
@@ -202,9 +183,18 @@ function addTypographicTile(slide, label, value, x, y, w, h) {
 
 function addKeywordBarChart(slide, keywords, x, y, w, h) {
   if (!keywords?.length) return;
-  const top = keywords.slice(0, 8);
+
+  // Sort by search volume descending
+  const sorted = [...keywords].sort((a, b) => {
+    const volA = Number(a.average_monthly_search_volume) || 0;
+    const volB = Number(b.average_monthly_search_volume) || 0;
+    return volB - volA;
+  });
+
+  const top = sorted.slice(0, 8);
   const labels = top.map((k) => k.keyword || "");
   const values = top.map((k) => Number(k.average_monthly_search_volume) || 0);
+
   slide.addChart(pptx.charts.BAR, [{ name: "Avg. Monthly Searches", labels, values }], {
     x, y, w, h,
     barDir: "bar",
@@ -217,6 +207,8 @@ function addKeywordBarChart(slide, keywords, x, y, w, h) {
     valAxisLabelFontSize: 8,
     catAxisLineShow: false,
     valAxisLineShow: false,
+    catAxisLabelPos: "low",
+    catAxisOrientation: "maxMin", // Ensures the highest volume (first in array) is at the top
   });
 }
 
@@ -260,7 +252,7 @@ function buildCover() {
   const slide = pptx.addSlide();
   slide.bkgd = COLOR.primary;
 
-  const agencyName = brief.metadata?.agency_name || "Scalene Design";
+  const agencyName = "Scalene Design";
   slide.addText(
     [
       { text: brand.name || "Creative Brief", options: { fontFace: FONT.heading, bold: true } },
@@ -460,23 +452,22 @@ function buildProductSnapshot(product) {
       x: MARGIN, y: leftY, w: leftW, h: 0.35,
       fontSize: 13, fontFace: FONT.body, color: COLOR.bodyText, bold: true,
     });
+    leftY += 0.45;
+  }
+
+  // Description moved to left
+  if (prodData.description) {
+    addSectionLabel(slide, "Description", MARGIN, leftY, leftW);
+    slide.addText(prodData.description, {
+      x: MARGIN, y: leftY + 0.28, w: leftW, h: 1.5,
+      fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
+    });
   }
 
   addVerticalDivider(slide, rightX - 0.175, topY, availH);
 
   // Right: description + USPs
   let ry = topY;
-  if (prodData.description) {
-    addSectionLabel(slide, "Description", rightX, ry, rightW);
-    slide.addText(prodData.description, {
-      x: rightX, y: ry + 0.28, w: rightW, h: 1.1,
-      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-    });
-    ry += 1.5;
-    addDivider(slide, rightX, ry, rightW);
-    ry += 0.15;
-  }
-
   if (prodData.usps?.length) {
     addSectionLabel(slide, "Key USPs", rightX, ry, rightW);
     ry += 0.3;
@@ -489,6 +480,25 @@ function buildProductSnapshot(product) {
         fontFace: FONT.body, valign: "middle", shrinkText: true,
       });
       ry += 0.44;
+    });
+    ry += 0.1;
+  }
+
+  // Top Complaints (conditional)
+  if (prodData.complaints?.length) {
+    addDivider(slide, rightX, ry, rightW);
+    ry += 0.15;
+    addSectionLabel(slide, "Top Complaints", rightX, ry, rightW, COLOR.secondary);
+    ry += 0.3;
+    prodData.complaints.slice(0, 3).forEach((complaint, i) => {
+      slide.addText([
+        { text: `·  `, options: { bold: true, fontSize: 12, color: COLOR.secondary } },
+        { text: complaint, options: { fontSize: 9.5, color: COLOR.bodyText } },
+      ], {
+        x: rightX, y: ry, w: rightW, h: 0.4,
+        fontFace: FONT.body, valign: "top", shrinkText: true,
+      });
+      ry += 0.42;
     });
   }
 }
@@ -508,16 +518,10 @@ function buildMarketGap(product) {
   if (keywords.length) {
     addKeywordBarChart(slide, keywords, MARGIN, topY + 0.28, CONTENT_W, chartH - 0.28);
   }
-  if (research.visual_implication) {
-    slide.addText(research.visual_implication, {
-      x: MARGIN, y: topY + chartH - 0.02, w: CONTENT_W, h: 0.32,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.primary, italic: true,
-    });
-  }
 
   // 3-column gap analysis
-  const colY = topY + chartH + 0.38;
-  const colH = availH - chartH - 0.38;
+  const colY = topY + chartH + 0.28;
+  const colH = 2.0;
   const colGap = 0.18;
   const colW = (CONTENT_W - colGap * 2) / 3;
   const col2X = MARGIN + colW + colGap;
@@ -542,24 +546,51 @@ function buildMarketGap(product) {
       });
     });
   });
+
+  // Visual implication as a strategic callout below columns
+  if (research.visual_implication) {
+    const implY = colY + colH + 0.3;
+    slide.addText(research.visual_implication, {
+      x: MARGIN, y: implY, w: CONTENT_W, h: 0.6,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.primary, italic: true,
+      valign: "top", shrinkText: true,
+    });
+  }
 }
 
-// ── Creative Direction: Positioning & Key Messages ───────────────────────────
+// ── Creative Positioning ─────────────────────────────────────────────────────
 function buildCreativePositioning(product) {
   const creative = product.creative_direction || {};
-  if (!creative.positioning_statement && !creative.key_messages?.length) return;
-  const slide = addContentSlide("Creative Direction");
-  const topY = CONTENT_START_Y;
+  if (!creative.positioning_statement && !creative.key_messages?.length && !creative.competitive_differentiation) return;
+
+  const slide = addContentSlide("Creative Positioning");
+  let cy = CONTENT_START_Y;
 
   if (creative.positioning_statement) {
-    addAccentCallout(slide, "Positioning Statement", creative.positioning_statement, MARGIN, topY, CONTENT_W, 1.3);
+    addSectionLabel(slide, "Positioning Statement", MARGIN, cy, CONTENT_W);
+    slide.addText(creative.positioning_statement, {
+      x: MARGIN, y: cy + 0.28, w: CONTENT_W, h: 0.8,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText,
+      valign: "top", shrinkText: true,
+    });
+    cy += 1.15;
+  }
+
+  if (creative.competitive_differentiation) {
+    addSectionLabel(slide, "Competitive Differentiation", MARGIN, cy, CONTENT_W);
+    slide.addText(creative.competitive_differentiation, {
+      x: MARGIN, y: cy + 0.28, w: CONTENT_W, h: 0.8,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText,
+      valign: "top", shrinkText: true,
+    });
+    cy += 1.15;
   }
 
   if (creative.key_messages?.length) {
-    const msgsY = topY + (creative.positioning_statement ? 1.5 : 0);
-    addSectionLabel(slide, "Key Messages", MARGIN, msgsY, CONTENT_W);
+    addSectionLabel(slide, "Key Messages", MARGIN, cy, CONTENT_W);
+    cy += 0.3;
     creative.key_messages.forEach((msg, i) => {
-      const my = msgsY + 0.3 + i * 0.62;
+      const my = cy;
       slide.addText([
         { text: `${String(i + 1).padStart(2, "0")}  `, options: { bold: true, fontSize: 20, color: COLOR.primary, fontFace: FONT.heading } },
         { text: msg, options: { fontSize: 12, color: COLOR.bodyText, fontFace: FONT.body } },
@@ -568,6 +599,7 @@ function buildCreativePositioning(product) {
         valign: "middle", shrinkText: true,
       });
       addDivider(slide, MARGIN, my + 0.58, CONTENT_W, COLOR.midGray, 0.5);
+      cy += 0.62;
     });
   }
 }
@@ -576,7 +608,7 @@ function buildCreativePositioning(product) {
 function buildCreativeVisual(product) {
   const creative = product.creative_direction || {};
   const vd = creative.visual_direction;
-  if (!vd && !creative.competitive_differentiation) return;
+  if (!vd) return;
   const slide = addContentSlide("Visual Direction");
   const topY = CONTENT_START_Y;
 
@@ -593,7 +625,7 @@ function buildCreativeVisual(product) {
     const cols = 2;
     const tileW = (CONTENT_W - 0.3) / cols;
     const rows = Math.ceil(vdRows.length / cols);
-    const tileH = Math.min(1.4, (SLIDE_H - topY - 1.5) / rows);
+    const tileH = Math.min(1.4, (SLIDE_H - topY - 0.5) / rows);
     const col2X = MARGIN + tileW + 0.3;
 
     vdRows.forEach(([label, value], i) => {
@@ -603,12 +635,6 @@ function buildCreativeVisual(product) {
       const ty = topY + row * (tileH + 0.1);
       addTypographicTile(slide, label, value, tx, ty, tileW, tileH);
     });
-  }
-
-  if (creative.competitive_differentiation) {
-    const boxY = SLIDE_H - 1.4;
-    addDivider(slide, MARGIN, boxY - 0.12, CONTENT_W, COLOR.midGray, 0.5);
-    addAccentCallout(slide, "Competitive Differentiation", creative.competitive_differentiation, MARGIN, boxY, CONTENT_W, 1.0);
   }
 }
 
@@ -716,7 +742,7 @@ function buildCompetitorLandscape(product) {
     }
 
     if (comp.complaints?.length) {
-      addSectionLabel(slide, "Complaints", x + imgPad, innerY, colW - imgPad * 2, COLOR.secondary);
+      addSectionLabel(slide, "Complaints", x + imgPad, innerY, colW - imgPad * 2);
       const compH = cardH - (innerY - y) - 0.1;
       slide.addText(comp.complaints.slice(0, 3).map((u) => `·  ${u}`).join("\n"), {
         x: x + imgPad, y: innerY + 0.22, w: colW - imgPad * 2, h: Math.max(compH, 0.3),
@@ -767,7 +793,7 @@ function buildMainImageOverview(versions) {
 
   versions.forEach((v, i) => {
     const x = MARGIN + i * (squareSize + gap);
-    
+
     slide.addShape(pptx.shapes.RECTANGLE, {
       x, y: squareY, w: squareSize, h: squareSize,
       fill: { color: "F5F5F5" },
@@ -821,10 +847,14 @@ function buildListingImagesOverview(listing) {
 
   let contentY = CONTENT_START_Y;
 
-  // sequence_strategy as accent callout
+  // sequence_strategy as plain text
   if (listing.sequence_strategy) {
-    addAccentCallout(slide, null, listing.sequence_strategy, MARGIN, contentY, CONTENT_W, 0.7);
-    contentY += 0.85;
+    slide.addText(listing.sequence_strategy, {
+      x: MARGIN, y: contentY, w: CONTENT_W, h: 0.5,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText,
+      italic: true, valign: "top", shrinkText: true,
+    });
+    contentY += 0.65;
   }
 
   const squareY = contentY;
@@ -837,7 +867,7 @@ function buildListingImagesOverview(listing) {
 
   images.forEach((img, i) => {
     const x = MARGIN + i * (squareSize + gap);
-    
+
     // 1:1 box
     slide.addShape(pptx.shapes.RECTANGLE, {
       x, y: squareY, w: squareSize, h: squareSize,
@@ -861,22 +891,22 @@ function buildListingImagesOverview(listing) {
       const maxY = squareY + squareSize - pad;
 
       if (copy.heading) {
-        const hH = 0.28;
+        const hH = 0.36;
         slide.addText(copy.heading, {
           x: x + pad, y: cy, w: innerW, h: hH,
           fontSize: 9, fontFace: FONT.heading, color: COLOR.primary,
           bold: true, align: "center", valign: "top", shrinkText: true,
         });
-        cy += hH + 0.04;
+        cy += hH + 0.02;
       }
       if (copy.subheading) {
-        const sH = 0.22;
+        const sH = 0.26;
         slide.addText(copy.subheading, {
           x: x + pad, y: cy, w: innerW, h: sH,
           fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
           align: "center", valign: "top", shrinkText: true,
         });
-        cy += sH + 0.04;
+        cy += sH + 0.02;
       }
       if (Array.isArray(copy.bullet_points) && copy.bullet_points.length) {
         const bpText = copy.bullet_points.map((bp) => `·  ${bp}`).join("\n");
@@ -907,6 +937,21 @@ function buildListingImagesOverview(listing) {
         x, y: labelY + 0.59, w: squareSize, h: 0.18,
         fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
         charSpacing: 1, align: "center", shrinkText: true,
+      });
+    }
+    if (img.strategy) {
+      slide.addText(img.strategy, {
+        x, y: labelY + 0.80, w: squareSize, h: 0.35,
+        fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
+        align: "center", valign: "top", shrinkText: true,
+      });
+    }
+    if (img.visual_concept) {
+      const vcY = img.strategy ? labelY + 1.18 : labelY + 0.80;
+      slide.addText(img.visual_concept, {
+        x, y: vcY, w: squareSize, h: 0.35,
+        fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
+        italic: true, align: "center", valign: "top", shrinkText: true,
       });
     }
   });
@@ -1011,12 +1056,44 @@ function buildAplusContentSlide(modules) {
 
     addSectionLabel(slide, (mod.module_role || "").replace(/_/g, " "), annX, rowY + pad, annW, COLOR.primary);
 
-    // Strategy text as annotation
+    let annotY = rowY + pad + 0.22;
+    const annotBottom = rowY + rowH - pad;
+
     if (mod.strategy) {
+      const stratH = mod.visual_concept
+        ? Math.min(0.38, (annotBottom - annotY) * 0.5)
+        : Math.max(annotBottom - annotY, 0.1);
+      slide.addText("Strategy", {
+        x: annX, y: annotY, w: annW, h: 0.14,
+        fontSize: 6, fontFace: FONT.body, color: COLOR.bodyText,
+        bold: true, valign: "top",
+      });
       slide.addText(mod.strategy, {
-        x: annX, y: rowY + pad + 0.22, w: annW, h: rowH - pad * 2 - 0.22,
+        x: annX, y: annotY + 0.15, w: annW, h: Math.max(stratH - 0.15, 0.1),
         fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
         valign: "top", shrinkText: true,
+      });
+      annotY += stratH + 0.06;
+    }
+
+    if (mod.visual_concept && annotY < annotBottom) {
+      // em-rule separator
+      slide.addText("— — —", {
+        x: annX, y: annotY, w: annW, h: 0.13,
+        fontSize: 6, fontFace: FONT.body, color: COLOR.midGray,
+        valign: "top",
+      });
+      annotY += 0.14;
+      slide.addText("Visual Concept", {
+        x: annX, y: annotY, w: annW, h: 0.14,
+        fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
+        bold: true, italic: true, valign: "top",
+      });
+      annotY += 0.15;
+      slide.addText(mod.visual_concept, {
+        x: annX, y: annotY, w: annW, h: Math.max(annotBottom - annotY, 0.1),
+        fontSize: 6.5, fontFace: FONT.body, color: COLOR.darkGray,
+        italic: true, valign: "top", shrinkText: true,
       });
     }
 
@@ -1063,61 +1140,33 @@ function buildShotListSection(shotList) {
 
 function buildAllShotTypesSlides(shotsByType, typeKeys) {
   const AVAIL_H = SLIDE_H - CONTENT_START_Y - 0.35;
-  const OPTION_H = 0.56;
-  const TYPE_H = 0.38;
+  const META_H = 0.22;
   const INDENT = 0.22;
-
-  let slide = null;
-  let currentY = CONTENT_START_Y;
-
-  const ensureSlide = (title) => {
-    if (!slide) {
-      slide = addContentSlide(title || "Shot List");
-      currentY = CONTENT_START_Y;
-    }
-  };
-
-  const nextSlide = () => {
-    slide = addContentSlide("Shot List (continued)");
-    currentY = CONTENT_START_Y;
-  };
+  const TYPE_H = 0.42;
 
   for (const key of typeKeys) {
     const options = shotsByType[key] || [];
-    const blockH = TYPE_H + options.length * OPTION_H;
-
-    ensureSlide("Shot List");
-
-    // Start fresh slide if this type block won't fit and we're not at the top
-    if (currentY + blockH > CONTENT_START_Y + AVAIL_H && currentY > CONTENT_START_Y) {
-      nextSlide();
-    }
-
-    // Type header
     const typePretty = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    if (currentY > CONTENT_START_Y) {
-      addDivider(slide, MARGIN, currentY, CONTENT_W, COLOR.midGray, 0.5);
-      currentY += 0.1;
-    }
-    slide.addText(typePretty, {
-      x: MARGIN, y: currentY, w: CONTENT_W * 0.65, h: 0.28,
-      fontSize: 12, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-    });
+
+    const slide = addContentSlide(typePretty);
+    let currentY = CONTENT_START_Y;
+
+    // Options count label (top-right)
     slide.addText(`${options.length} option${options.length === 1 ? "" : "s"}`, {
-      x: MARGIN + CONTENT_W * 0.65, y: currentY, w: CONTENT_W * 0.35, h: 0.28,
+      x: MARGIN + CONTENT_W * 0.65, y: currentY - TYPE_H + 0.08, w: CONTENT_W * 0.35, h: 0.28,
       fontSize: 8, fontFace: FONT.body, color: COLOR.darkGray,
       bold: true, charSpacing: 2, align: "right",
     });
-    currentY += TYPE_H;
 
-    for (const opt of options) {
-      if (currentY + OPTION_H > CONTENT_START_Y + AVAIL_H) {
-        nextSlide();
-        slide.addText(`${typePretty} (cont.)`, {
-          x: MARGIN, y: currentY, w: CONTENT_W, h: 0.28,
-          fontSize: 10, fontFace: FONT.heading, color: COLOR.primary, bold: true, italic: true,
-        });
-        currentY += 0.32;
+    // Divide available height equally among options
+    const optionH = AVAIL_H / Math.max(options.length, 1);
+    const promptH = optionH - META_H - 0.14;
+
+    options.forEach((opt, i) => {
+      const optY = currentY + i * optionH;
+
+      if (i > 0) {
+        addDivider(slide, MARGIN, optY, CONTENT_W, COLOR.midGray, 0.5);
       }
 
       // Line 1: option_id · AR · lighting
@@ -1128,21 +1177,19 @@ function buildAllShotTypesSlides(shotsByType, typeKeys) {
       ].filter(Boolean).join("  ·  ");
 
       slide.addText(metaBits, {
-        x: MARGIN + INDENT, y: currentY, w: CONTENT_W - INDENT, h: 0.22,
+        x: MARGIN + INDENT, y: optY + 0.08, w: CONTENT_W - INDENT, h: META_H,
         fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray, shrinkText: true,
       });
 
-      // Line 2: prompt
+      // Line 2: prompt fills remaining height
       if (opt.prompt) {
         slide.addText(opt.prompt, {
-          x: MARGIN + INDENT, y: currentY + 0.22, w: CONTENT_W - INDENT, h: 0.28,
+          x: MARGIN + INDENT, y: optY + 0.08 + META_H, w: CONTENT_W - INDENT, h: promptH,
           fontSize: 8, fontFace: FONT.body, color: COLOR.bodyText,
           valign: "top", shrinkText: true,
         });
       }
-
-      currentY += OPTION_H;
-    }
+    });
   }
 }
 
