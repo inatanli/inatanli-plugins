@@ -16,7 +16,7 @@ except ImportError:
 
 TASK_POST_URL = "https://api.dataforseo.com/v3/merchant/amazon/asin/task_post"
 TASK_GET_URL = "https://api.dataforseo.com/v3/merchant/amazon/asin/task_get/advanced"
-POLL_INTERVAL = 3  # seconds between polling attempts
+POLL_INTERVAL = 5  # seconds between polling attempts
 MAX_POLL_ATTEMPTS = 120  # up to 6 minutes of polling
 
 
@@ -120,8 +120,7 @@ def fetch_products(asins: list) -> list:
         {
             "asin": asin,
             "language_code": "en_US",
-            "location_code": 2840,  # United States
-            "priority": 2,
+            "location_code": 2840,
         }
         for asin in asins
     ]
@@ -167,8 +166,8 @@ def fetch_products(asins: list) -> list:
                     if status == 20000 and task.get("result"):
                         results[idx] = extract_product_data(task)
                         completed.append(idx)
-                    elif status in (40602, 40603):
-                        pass  # still processing, retry next cycle
+                    elif status in (40601, 40602, 40603):
+                        pass  # 40601=handed, 40602=queued, 40603=processing — retry next cycle
                     elif status and status >= 40000:
                         results[idx] = {"error": f"Task failed: {task.get('status_message', 'unknown')}", "asin": asins[idx]}
                         completed.append(idx)
