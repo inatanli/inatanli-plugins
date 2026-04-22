@@ -25,7 +25,7 @@ Competitor Research Progress:
 ### Step 1: Get Competitors
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/bin/get_competitors.py --asin {ASIN} --marketplace {MARKETPLACE}
+python ${CLAUDE_PLUGIN_ROOT}/bin/get_competitors.py --asin {ASIN}
 ```
 
 Returns up to 4 ASINs with competitive overlap data. **The first result is always the input ASIN itself.**
@@ -42,7 +42,7 @@ Preserve the `intersecting_keywords` and `avg_position` values from each competi
 **Fetch ALL competitor ASINs in a single batch call using `--asins` (plural). Do not call fetch_product.py multiple times with `--asin` (singular) for individual competitors.** One call, all ASINs at once:
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asins {ASIN_1} {ASIN_2} {ASIN_3} --marketplace {MARKETPLACE}
+python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asins {ASIN_1} {ASIN_2} {ASIN_3}
 ```
 
 Returns a list of product dicts in the same order as the input ASINs.
@@ -54,7 +54,7 @@ From each competitor listing, extract:
   **HARD RULE: Preserve ALL image URLs.** The `image_urls` array in your output must contain every URL returned by fetch_product.py for each competitor. Do not summarize, truncate, or reduce the list. Typical products have 7–10 images. After writing the output, verify: the number of URLs in your output must equal the number returned by the script. If they differ, you have dropped URLs — fix it before proceeding.
 
   When presenting findings, embed EVERY image inline using markdown (`![alt](url)`) so the user can visually review the full gallery.
-- **Competitor USPs** — what selling points does this listing highlight? What do they lead with in their title, bullet points, and A+ content? Summarize as 2–5 short bullet points capturing their core claims (e.g. "clinically tested", "1000mg per serving", "made in USA").
+- **Competitor USPs** — what selling points does this listing highlight? What do they lead with in their title, bullet points, and A+ content? Identify the **top 5 short bullet points** capturing their core claims (e.g. "clinically tested", "1000mg per serving", "made in USA").
 - **Negative review complaints** — what are customers unhappy about? How can our visuals address these gaps?
 - Skip complaint analysis if no negative reviews exist
 
