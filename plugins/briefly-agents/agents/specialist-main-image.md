@@ -46,8 +46,7 @@ Return a JSON array of exactly 5 objects. This populates `products[n].deliverabl
     "strategy_name": "Hero Angle & Silhouette",
     "feature": "The single feature or USP this version foregrounds",
     "strategy": "Why this strategy, tied to a specific research signal (keyword, USP, competitor gap, or complaint)",
-    "visual_concept": "Scene description: angle, lighting direction, shadow treatment, material cues, any hint of scale or use. 3D-render quality, legible at 150 px thumbnail.",
-    "wireframe_description": "Spatial layout: product placement in frame, shadow zone, negative space, any compositional anchors. Not a scene description."
+    "visual_concept": "Scene description: angle, lighting direction, shadow treatment, material cues, any hint of scale or use. 3D-render quality, legible at 150 px thumbnail."
   }
 ]
 ```
@@ -56,9 +55,8 @@ Return a JSON array of exactly 5 objects. This populates `products[n].deliverabl
 - `version_number` — integers 1–5.
 - `strategy_name` — must match an entry in the Main Image Strategy Inventory below verbatim. Do not invent new strategies.
 - `feature` — one feature/USP. Keep it concrete (e.g., "Double-walled insulation", not "premium quality").
-- `strategy` — 1–2 sentences, ≤40 words. Cite the research signal and state the creative move.
-- `visual_concept` — paragraph. Covers angle, lighting, shadow, material, and any scale/use cue. Honors the Creative Director's `visual_direction`.
-- `wireframe_description` — plain text. Spatial zones only. Used to generate the B&W wireframe in the deck.
+- `strategy` — 1–2 sentences, ≤50 words. Cite the research signal and state the creative move.
+- `visual_concept` — paragraph, ≤600 chars. Covers angle, lighting, shadow, material, and any scale/use cue. Honors the Creative Director's `visual_direction`.
 
 ### Forbidden fields
 Do **not** emit `prompt`, `copy`, or `strategic_why`. Prompts belong to the shot-list-director in Phase 5; `copy` is always null for main image; `strategic_why` has been renamed to `strategy`.
