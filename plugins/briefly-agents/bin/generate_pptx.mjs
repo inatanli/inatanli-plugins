@@ -6,7 +6,7 @@
  * Uses PptxGenJS. Outputs a .pptx to the specified path.
  *
  * Usage:
- *   node scripts/generate_pptx.mjs --input brief.json --output brief.pptx
+ *   node generate_pptx.mjs --input brief.json --output brief.pptx
  */
 
 import PptxGenJS from "pptxgenjs";
@@ -14,10 +14,6 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 
 // ── Image helpers ──────────────────────────────────────────────────────────
-/**
- * Fetch a single image URL and return a PptxGenJS-compatible base64 data string.
- * Returns null on failure so missing images don't crash the deck.
- */
 async function fetchAsBase64(url) {
   try {
     const res = await fetch(url);
@@ -35,10 +31,6 @@ async function fetchAsBase64(url) {
   }
 }
 
-/**
- * Walk the brief, collect every unique image URL, fetch them all in parallel,
- * and return a Map<url, base64DataString>.
- */
 async function prefetchAllImages(brief) {
   const urls = new Set();
   for (const product of brief.products || []) {
@@ -48,11 +40,8 @@ async function prefetchAllImages(brief) {
       for (const u of comp.image_urls || []) urls.add(u);
     }
   }
-
   const cache = new Map();
   if (urls.size === 0) return cache;
-
-  // Batch in groups of 10 to avoid overwhelming the network
   const allUrls = [...urls];
   for (let i = 0; i < allUrls.length; i += 10) {
     const batch = allUrls.slice(i, i + 10);
@@ -60,25 +49,18 @@ async function prefetchAllImages(brief) {
       batch.map(async (u) => ({ url: u, data: await fetchAsBase64(u) }))
     );
     for (const r of results) {
-      if (r.status === "fulfilled" && r.value.data) {
-        cache.set(r.value.url, r.value.data);
-      }
+      if (r.status === "fulfilled" && r.value.data) cache.set(r.value.url, r.value.data);
     }
   }
-
   console.error(JSON.stringify({ info: `Prefetched ${cache.size}/${urls.size} images as base64` }));
   return cache;
 }
 
-// Module-level image cache — populated before slide building
 let imageCache = new Map();
 
 // ── CLI args ────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
-const flag = (name) => {
-  const i = args.indexOf(name);
-  return i !== -1 ? args[i + 1] : null;
-};
+const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : null; };
 const INPUT = flag("--input");
 const OUTPUT = flag("--output") || "brief.pptx";
 
@@ -97,11 +79,11 @@ try {
 }
 
 // ── Constants ───────────────────────────────────────────────────────────────
-const SLIDE_W = 13.333; // 16:9 widescreen inches
+const SLIDE_W = 13.333;
 const SLIDE_H = 7.5;
 const MARGIN = 0.6;
 const CONTENT_W = SLIDE_W - MARGIN * 2;
-const CONTENT_START_Y = 1.4; // below section header
+const CONTENT_START_Y = 1.4;
 
 // ── Brand extraction ────────────────────────────────────────────────────────
 const brand = brief.brand || {};
@@ -109,11 +91,10 @@ const guidelines = brand.guidelines || {};
 const colors = guidelines.colors || {};
 const typography = guidelines.typography || {};
 
-// Brand colors (strip leading # if present, PptxGenJS wants hex without #)
 const hex = (c) => (c || "").replace(/^#/, "") || "333333";
 if (!colors.primary) {
   console.error(JSON.stringify({
-    warn: "brand.colors.primary missing — falling back to neutral #333333. Deck branding will be generic.",
+    warn: "brand.colors.primary missing — falling back to neutral #333333.",
   }));
 }
 const isLightColor = (hexStr) => {
@@ -134,32 +115,23 @@ const COLOR = {
   bodyText: "2D2D2D",
 };
 
-// Font mapping – brand fonts with universal fallbacks
-const FALLBACK_HEADING = "Calibri";
-const FALLBACK_BODY = "Calibri";
-
 const FONT = {
-  heading: typography.heading_font || FALLBACK_HEADING,
-  body: typography.body_font || FALLBACK_BODY,
+  heading: typography.heading_font || "Calibri",
+  body: typography.body_font || "Calibri",
 };
 
 // ── Presentation instance ───────────────────────────────────────────────────
 const pptx = new PptxGenJS();
-pptx.layout = "LAYOUT_WIDE"; // 13.333 x 7.5
+pptx.layout = "LAYOUT_WIDE";
 pptx.author = "Creative Brief Agent";
 pptx.subject = `Creative Brief — ${brand.name || "Brand"}`;
 
-// ── Slide master definitions ────────────────────────────────────────────────
+// ── Slide masters ────────────────────────────────────────────────────────────
 pptx.defineSlideMaster({
   title: "SECTION_HEADER",
   background: { color: COLOR.primary },
   objects: [
-    {
-      rect: {
-        x: 0, y: SLIDE_H - 0.08, w: "100%", h: 0.08,
-        fill: { color: COLOR.accent || COLOR.secondary },
-      },
-    },
+    { rect: { x: 0, y: SLIDE_H - 0.08, w: "100%", h: 0.08, fill: { color: COLOR.accent || COLOR.secondary } } },
   ],
 });
 
@@ -167,25 +139,88 @@ pptx.defineSlideMaster({
   title: "CONTENT",
   background: { color: COLOR.white },
   objects: [
-    // Top accent bar
-    {
-      rect: {
-        x: 0, y: 0, w: "100%", h: 0.06,
-        fill: { color: COLOR.primary },
-      },
-    },
-    // Bottom accent line
-    {
-      rect: {
-        x: 0, y: SLIDE_H - 0.04, w: "100%", h: 0.04,
-        fill: { color: COLOR.accent || COLOR.midGray },
-      },
-    },
+    { rect: { x: 0, y: 0, w: "100%", h: 0.06, fill: { color: COLOR.primary } } },
+    { rect: { x: 0, y: SLIDE_H - 0.04, w: "100%", h: 0.04, fill: { color: COLOR.accent || COLOR.midGray } } },
   ],
   slideNumber: { x: "95%", y: "96%", color: COLOR.darkGray, fontSize: 8 },
 });
 
-// ── Helper: add a section header slide ──────────────────────────────────────
+// ── Design system helpers ───────────────────────────────────────────────────
+
+function addSectionLabel(slide, text, x, y, w, color) {
+  slide.addText((text || "").toUpperCase(), {
+    x, y, w, h: 0.25,
+    fontSize: 9, fontFace: FONT.body, color: color || COLOR.darkGray,
+    bold: true, charSpacing: 2.5,
+  });
+}
+
+function addDivider(slide, x, y, w, color, weight) {
+  slide.addShape(pptx.shapes.LINE, {
+    x, y, w, h: 0,
+    line: { color: color || COLOR.midGray, width: weight || 0.75 },
+  });
+}
+
+function addVerticalDivider(slide, x, y, h, color) {
+  slide.addShape(pptx.shapes.LINE, {
+    x, y, w: 0, h,
+    line: { color: color || COLOR.midGray, width: 0.75 },
+  });
+}
+
+function addAccentCallout(slide, label, body, x, y, w, h, accentColor) {
+  const barW = 0.07;
+  const ac = accentColor || COLOR.accent || COLOR.primary;
+  slide.addShape(pptx.shapes.RECTANGLE, {
+    x, y, w: barW, h,
+    fill: { color: ac }, line: { color: ac },
+  });
+  const tx = x + barW + 0.1;
+  const tw = w - barW - 0.1;
+  if (label) addSectionLabel(slide, label, tx, y + 0.06, tw);
+  if (body) {
+    slide.addText(body, {
+      x: tx, y: y + (label ? 0.3 : 0.08), w: tw, h: h - (label ? 0.36 : 0.14),
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText,
+      valign: "top", shrinkText: true,
+    });
+  }
+}
+
+function addTypographicTile(slide, label, value, x, y, w, h) {
+  addDivider(slide, x, y, w, COLOR.midGray, 0.5);
+  addSectionLabel(slide, label, x, y + 0.08, w);
+  if (value) {
+    slide.addText(value, {
+      x, y: y + 0.33, w, h: h - 0.38,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText,
+      valign: "top", shrinkText: true,
+    });
+  }
+}
+
+function addKeywordBarChart(slide, keywords, x, y, w, h) {
+  if (!keywords?.length) return;
+  const top = keywords.slice(0, 8);
+  const labels = top.map((k) => k.keyword || "");
+  const values = top.map((k) => Number(k.average_monthly_search_volume) || 0);
+  slide.addChart(pptx.charts.BAR, [{ name: "Avg. Monthly Searches", labels, values }], {
+    x, y, w, h,
+    barDir: "bar",
+    chartColors: [COLOR.primary],
+    showLegend: false,
+    showTitle: false,
+    showValue: true,
+    dataLabelFontSize: 8,
+    catAxisLabelFontSize: 8,
+    valAxisLabelFontSize: 8,
+    catAxisLineShow: false,
+    valAxisLineShow: false,
+  });
+}
+
+// ── Section / content slide builders ────────────────────────────────────────
 function addSectionSlide(title, subtitle) {
   const slide = pptx.addSlide({ masterName: "SECTION_HEADER" });
   slide.addText(title, {
@@ -197,13 +232,12 @@ function addSectionSlide(title, subtitle) {
     slide.addText(subtitle, {
       x: MARGIN, y: 3.6, w: CONTENT_W, h: 0.8,
       fontSize: 18, fontFace: FONT.body, color: COLOR.white,
-      bold: false, align: "left", transparency: 20,
+      align: "left", transparency: 20,
     });
   }
   return slide;
 }
 
-// ── Helper: add a content slide with a title ────────────────────────────────
 function addContentSlide(title) {
   const slide = pptx.addSlide({ masterName: "CONTENT" });
   slide.addText(title, {
@@ -211,235 +245,21 @@ function addContentSlide(title) {
     fontSize: 26, fontFace: FONT.heading, color: COLOR.primary,
     bold: true, align: "left",
   });
-  // Divider line under title
-  slide.addShape(pptx.shapes.LINE, {
-    x: MARGIN, y: 1.05, w: CONTENT_W, h: 0,
-    line: { color: COLOR.midGray, width: 1 },
-  });
+  addDivider(slide, MARGIN, 1.05, CONTENT_W);
   return slide;
 }
 
-
-// ── Helper: render SVG wireframe as shapes on slide ─────────────────────────
-/**
- * Renders a simple wireframe using PptxGenJS shapes.
- * Uses the wireframe_description to create boxes, circles, and image
- * placeholders (box with X) with copy text placed directly on them.
- *
- * @param {object} slide - PptxGenJS slide
- * @param {string} description - wireframe_description text
- * @param {string|null} copy - copy text to overlay
- * @param {number} originX - left edge
- * @param {number} originY - top edge
- * @param {number} frameW - wireframe width
- * @param {number} frameH - wireframe height
- */
-function renderWireframe(slide, description, copy, originX, originY, frameW, frameH) {
-  const desc = (description || "").toLowerCase();
-
-  // Outer wireframe border
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: originX, y: originY, w: frameW, h: frameH,
-    fill: { color: "FAFAFA" },
-    line: { color: "BBBBBB", width: 1 },
-  });
-
-  // Label
-  slide.addText("WIREFRAME", {
-    x: originX, y: originY, w: frameW, h: 0.25,
-    fontSize: 7, fontFace: FONT.body, color: "999999",
-    align: "center", bold: true,
-  });
-
-  const innerPad = 0.12;
-  const innerX = originX + innerPad;
-  const innerY = originY + 0.28;
-  const innerW = frameW - innerPad * 2;
-  const innerH = frameH - 0.4;
-
-  // Parse description for zones
-  const hasProduct = /product|hero|item|bottle|package|jar|bag/i.test(desc);
-  const hasHeadline = /headline|title|heading|text overlay|copy/i.test(desc);
-  const hasLifestyle = /lifestyle|background|scene|environment|setting/i.test(desc);
-  const hasFeatures = /feature|callout|benefit|icon|bullet/i.test(desc);
-  const hasLogo = /logo|brand mark/i.test(desc);
-  const hasBadge = /badge|seal|stamp|certification|award/i.test(desc);
-  const hasComparison = /comparison|before.after|vs|versus|side.by.side/i.test(desc);
-  const hasGrid = /grid|gallery|collage|multiple/i.test(desc);
-
-  // Determine layout pattern
-  if (hasComparison) {
-    // Side-by-side comparison
-    const halfW = (innerW - 0.1) / 2;
-    drawImagePlaceholder(slide, innerX, innerY, halfW, innerH, "BEFORE");
-    drawImagePlaceholder(slide, innerX + halfW + 0.1, innerY, halfW, innerH, "AFTER");
-    if (copy) {
-      overlayText(slide, copy, originX, originY + frameH - 0.5, frameW, 0.45);
-    }
-  } else if (hasGrid) {
-    // 2x2 grid
-    const cellW = (innerW - 0.08) / 2;
-    const cellH = (innerH - 0.08) / 2;
-    drawImagePlaceholder(slide, innerX, innerY, cellW, cellH, "IMG 1");
-    drawImagePlaceholder(slide, innerX + cellW + 0.08, innerY, cellW, cellH, "IMG 2");
-    drawImagePlaceholder(slide, innerX, innerY + cellH + 0.08, cellW, cellH, "IMG 3");
-    drawImagePlaceholder(slide, innerX + cellW + 0.08, innerY + cellH + 0.08, cellW, cellH, "IMG 4");
-  } else if (hasFeatures && hasProduct) {
-    // Product left, features right
-    const prodW = innerW * 0.45;
-    const featW = innerW * 0.5;
-    drawImagePlaceholder(slide, innerX, innerY, prodW, innerH, "PRODUCT");
-    // Feature callout lines
-    const featX = innerX + prodW + innerW * 0.05;
-    const rows = 3;
-    const rowH = innerH / rows;
-    for (let i = 0; i < rows; i++) {
-      const fy = innerY + i * rowH + 0.05;
-      slide.addShape(pptx.shapes.OVAL, {
-        x: featX, y: fy + 0.05, w: 0.25, h: 0.25,
-        line: { color: "AAAAAA", width: 0.75 },
-      });
-      slide.addText(`Feature ${i + 1}`, {
-        x: featX + 0.32, y: fy, w: featW - 0.35, h: rowH - 0.1,
-        fontSize: 7, fontFace: FONT.body, color: "888888",
-        valign: "middle",
-      });
-    }
-    if (copy) {
-      overlayText(slide, copy, featX, innerY + innerH - 0.35, featW, 0.3);
-    }
-  } else if (hasLifestyle && hasProduct) {
-    // Full background with centered product
-    slide.addShape(pptx.shapes.RECTANGLE, {
-      x: innerX, y: innerY, w: innerW, h: innerH,
-      fill: { color: "F0F0F0" },
-      line: { color: "CCCCCC", width: 0.5, dashType: "dash" },
-    });
-    slide.addText("LIFESTYLE BG", {
-      x: innerX, y: innerY, w: innerW, h: 0.2,
-      fontSize: 6, fontFace: FONT.body, color: "AAAAAA", align: "center",
-    });
-    // Product in center
-    const pW = innerW * 0.35;
-    const pH = innerH * 0.6;
-    drawImagePlaceholder(slide, innerX + (innerW - pW) / 2, innerY + (innerH - pH) / 2, pW, pH, "PRODUCT");
-    if (hasHeadline && copy) {
-      overlayText(slide, copy, innerX + 0.1, innerY + innerH - 0.45, innerW - 0.2, 0.4);
-    }
-  } else if (hasProduct && hasHeadline) {
-    // Product with headline zone
-    const prodH = innerH * 0.65;
-    drawImagePlaceholder(slide, innerX + innerW * 0.15, innerY, innerW * 0.7, prodH, "PRODUCT");
-    // Headline zone
-    slide.addShape(pptx.shapes.RECTANGLE, {
-      x: innerX, y: innerY + prodH + 0.08, w: innerW, h: innerH - prodH - 0.08,
-      fill: { color: "F0F0F0" },
-      line: { color: "CCCCCC", width: 0.5 },
-    });
-    const headlineText = copy || "HEADLINE";
-    slide.addText(headlineText, {
-      x: innerX + 0.05, y: innerY + prodH + 0.08, w: innerW - 0.1, h: innerH - prodH - 0.08,
-      fontSize: 7, fontFace: FONT.body, color: "777777",
-      align: "center", valign: "middle",
-    });
-  } else if (hasProduct) {
-    // Centered product only
-    const pW = innerW * 0.6;
-    const pH = innerH * 0.75;
-    drawImagePlaceholder(slide, innerX + (innerW - pW) / 2, innerY + (innerH - pH) / 2, pW, pH, "PRODUCT");
-    if (copy) {
-      overlayText(slide, copy, innerX, originY + frameH - 0.45, innerW, 0.35);
-    }
-  } else {
-    // Generic layout — full image placeholder
-    drawImagePlaceholder(slide, innerX, innerY, innerW, innerH, "VISUAL");
-    if (copy) {
-      overlayText(slide, copy, innerX, innerY + innerH * 0.65, innerW, innerH * 0.3);
-    }
-  }
-
-  // Badge
-  if (hasBadge) {
-    slide.addShape(pptx.shapes.OVAL, {
-      x: originX + frameW - 0.55, y: originY + 0.3, w: 0.45, h: 0.45,
-      line: { color: "AAAAAA", width: 0.75 },
-    });
-    slide.addText("BADGE", {
-      x: originX + frameW - 0.55, y: originY + 0.3, w: 0.45, h: 0.45,
-      fontSize: 5, fontFace: FONT.body, color: "999999",
-      align: "center", valign: "middle",
-    });
-  }
-
-  // Logo
-  if (hasLogo) {
-    slide.addShape(pptx.shapes.RECTANGLE, {
-      x: originX + 0.1, y: originY + frameH - 0.4, w: 0.5, h: 0.25,
-      line: { color: "BBBBBB", width: 0.5 },
-    });
-    slide.addText("LOGO", {
-      x: originX + 0.1, y: originY + frameH - 0.4, w: 0.5, h: 0.25,
-      fontSize: 5, fontFace: FONT.body, color: "AAAAAA", align: "center", valign: "middle",
-    });
-  }
-}
-
-/** Draw an image placeholder — rectangle with an X through it */
-function drawImagePlaceholder(slide, x, y, w, h, label) {
-  // Box
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x, y, w, h,
-    line: { color: "BBBBBB", width: 0.75 },
-  });
-  // Diagonal top-left to bottom-right
-  slide.addShape(pptx.shapes.LINE, {
-    x, y, w, h,
-    line: { color: "CCCCCC", width: 0.5 },
-  });
-  // Diagonal top-right to bottom-left
-  slide.addShape(pptx.shapes.LINE, {
-    x: x + w, y, w: -w, h,
-    line: { color: "CCCCCC", width: 0.5 },
-  });
-  // Label
-  if (label) {
-    slide.addText(label, {
-      x, y, w, h,
-      fontSize: 7, fontFace: FONT.body, color: "AAAAAA",
-      align: "center", valign: "middle",
-    });
-  }
-}
-
-/** Overlay copy text on a translucent bar */
-function overlayText(slide, text, x, y, w, h) {
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x, y, w, h,
-    fill: { color: "FFFFFF", transparency: 25 },
-  });
-  slide.addText(text, {
-    x: x + 0.05, y, w: w - 0.1, h,
-    fontSize: 7, fontFace: FONT.body, color: "555555",
-    align: "center", valign: "middle", shrinkText: true,
-  });
-}
-
-// ── Helper: truncate text ───────────────────────────────────────────────────
-function trunc(str, max = 120) {
-  if (!str) return "";
-  return str.length > max ? str.slice(0, max - 1) + "…" : str;
-}
+// ── Truncate helper ─────────────────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SLIDE BUILDERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── 1. COVER SLIDE ──────────────────────────────────────────────────────────
+// ── Cover ───────────────────────────────────────────────────────────────────
 function buildCover() {
   const slide = pptx.addSlide();
   slide.bkgd = COLOR.primary;
 
-  // Brand name × Agency (mixed fonts on one line)
   const agencyName = brief.metadata?.agency_name || "Scalene Design";
   slide.addText(
     [
@@ -447,67 +267,45 @@ function buildCover() {
       { text: " x ", options: { fontFace: "Space Grotesk", bold: false } },
       { text: agencyName, options: { fontFace: "Space Grotesk", bold: true } },
     ],
-    {
-      x: MARGIN, y: 1.5, w: CONTENT_W, h: 1.5,
-      fontSize: 52, color: COLOR.white, align: "left",
-    }
+    { x: MARGIN, y: 1.5, w: CONTENT_W, h: 1.5, fontSize: 52, color: COLOR.white, align: "left" }
   );
 
-  // Subtitle
-  const productCount = (brief.products || []).length;
-  const productNames = (brief.products || []).map((p) => p.name).join(" · ");
-  slide.addText("CREATIVE BRIEF", {
+  slide.addText("Creative Brief", {
     x: MARGIN, y: 3.1, w: CONTENT_W, h: 0.6,
     fontSize: 18, fontFace: FONT.heading, color: COLOR.white,
-    bold: false, letterSpacing: 6, transparency: 15,
+    charSpacing: 4, transparency: 15,
   });
 
-  slide.addText(productNames || `${productCount} product(s)`, {
+  const productNames = (brief.products || []).map((p) => p.name).join(" · ");
+  slide.addText(productNames || `${(brief.products || []).length} product(s)`, {
     x: MARGIN, y: 3.8, w: CONTENT_W, h: 0.5,
-    fontSize: 14, fontFace: FONT.body, color: COLOR.white,
-    transparency: 30,
+    fontSize: 14, fontFace: FONT.body, color: COLOR.white, transparency: 30,
   });
 
-  // Date
   const dateStr = brief.metadata?.generated_date || new Date().toISOString().split("T")[0];
   slide.addText(dateStr, {
     x: MARGIN, y: SLIDE_H - 1.2, w: CONTENT_W, h: 0.4,
-    fontSize: 11, fontFace: FONT.body, color: COLOR.white,
-    transparency: 40,
+    fontSize: 11, fontFace: FONT.body, color: COLOR.white, transparency: 40,
   });
 
-  // Bottom accent bar
   slide.addShape(pptx.shapes.RECTANGLE, {
     x: 0, y: SLIDE_H - 0.08, w: "100%", h: 0.08,
     fill: { color: COLOR.accent || COLOR.secondary },
   });
 }
 
-// ── 2. BRAND GUIDELINES ─────────────────────────────────────────────────────
+// ── Brand Guidelines (1 slide) ───────────────────────────────────────────────
 function buildBrandGuidelines() {
   const slide = addContentSlide("Brand Guidelines");
 
-  const ROW1_Y = CONTENT_START_Y;
-  const cardGap = 0.2;
+  // TOP: colors (left 55%) + typography (right 40%)
+  const topY = CONTENT_START_Y;
+  const topH = 1.55;
+  const colorsW = CONTENT_W * 0.55;
+  const typeX = MARGIN + CONTENT_W * 0.6;
+  const typeW = CONTENT_W * 0.38;
 
-  // ── TOP ROW: Colors card (left) + Typography card (right) ──
-  const topCardH = 1.35;
-  const topLeftW = CONTENT_W * 0.55;
-  const topRightW = CONTENT_W - topLeftW - cardGap;
-  const topRightX = MARGIN + topLeftW + cardGap;
-
-  // Colors card background
-  slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-    x: MARGIN, y: ROW1_Y, w: topLeftW, h: topCardH,
-    rectRadius: 0.1, fill: { color: COLOR.lightGray },
-    line: { color: COLOR.midGray, width: 0.5 },
-  });
-
-  slide.addText("COLORS", {
-    x: MARGIN + 0.2, y: ROW1_Y + 0.12, w: 1.2, h: 0.28,
-    fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray,
-    bold: true, charSpacing: 2,
-  });
+  addSectionLabel(slide, "Colors", MARGIN, topY, colorsW);
 
   const chipColors = [
     { colorHex: COLOR.primary, label: "Primary" },
@@ -515,23 +313,18 @@ function buildBrandGuidelines() {
     { colorHex: COLOR.accent, label: "Accent" },
   ];
   if (colors.additional) {
-    colors.additional.forEach((c, i) =>
-      chipColors.push({ colorHex: hex(c), label: `Add. ${i + 1}` })
-    );
+    colors.additional.forEach((c, i) => chipColors.push({ colorHex: hex(c), label: `Add. ${i + 1}` }));
   }
-
-  const CHIP_H = 0.4;
-  const CHIP_GAP = 0.12;
-  const CHIP_W = (topLeftW - 0.4 - CHIP_GAP * (chipColors.length - 1)) / Math.max(chipColors.length, 1);
-  let chipX = MARGIN + 0.2;
-  const chipY = ROW1_Y + 0.48;
-  for (const chip of chipColors) {
-    if (!chip.colorHex || chip.colorHex === "333333") continue;
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+  const validChips = chipColors.filter((c) => c.colorHex && c.colorHex !== "333333");
+  const CHIP_H = 0.55;
+  const CHIP_GAP = 0.1;
+  const CHIP_W = Math.min(1.2, (colorsW - CHIP_GAP * (validChips.length - 1)) / Math.max(validChips.length, 1));
+  let chipX = MARGIN;
+  const chipY = topY + 0.3;
+  for (const chip of validChips) {
+    slide.addShape(pptx.shapes.RECTANGLE, {
       x: chipX, y: chipY, w: CHIP_W, h: CHIP_H,
-      rectRadius: 0.06,
-      fill: { color: chip.colorHex },
-      line: { color: COLOR.midGray, width: 0.5 },
+      fill: { color: chip.colorHex }, line: { color: COLOR.midGray, width: 0.5 },
     });
     const labelColor = isLightColor(chip.colorHex) ? "333333" : "FFFFFF";
     slide.addText(`${chip.label}\n#${chip.colorHex}`, {
@@ -542,991 +335,696 @@ function buildBrandGuidelines() {
     chipX += CHIP_W + CHIP_GAP;
   }
 
-  // Typography card background
-  slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-    x: topRightX, y: ROW1_Y, w: topRightW, h: topCardH,
-    rectRadius: 0.1, fill: { color: COLOR.lightGray },
-    line: { color: COLOR.midGray, width: 0.5 },
+  addVerticalDivider(slide, typeX - 0.2, topY, topH);
+  addSectionLabel(slide, "Typography", typeX, topY, typeW);
+  slide.addText(FONT.heading, {
+    x: typeX, y: topY + 0.3, w: typeW, h: 0.55,
+    fontSize: 28, fontFace: FONT.heading, color: COLOR.primary, bold: true, shrinkText: true,
+  });
+  slide.addText(FONT.body, {
+    x: typeX, y: topY + 0.9, w: typeW, h: 0.35,
+    fontSize: 16, fontFace: FONT.body, color: COLOR.bodyText, shrinkText: true,
   });
 
-  slide.addText("TYPOGRAPHY", {
-    x: topRightX + 0.2, y: ROW1_Y + 0.12, w: 2.0, h: 0.28,
-    fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray,
-    bold: true, charSpacing: 2,
-  });
+  // BOTTOM: Tone | Audience | Descriptors (3 columns, no cards)
+  const botY = topY + topH + 0.3;
+  addDivider(slide, MARGIN, botY - 0.12, CONTENT_W);
+  const botH = SLIDE_H - botY - 0.35;
+  const colW3 = (CONTENT_W - 0.3) / 3;
+  const col2X = MARGIN + colW3 + 0.15;
+  const col3X = MARGIN + (colW3 + 0.15) * 2;
 
-  slide.addText([
-    { text: "Heading  ", options: { fontSize: 10, color: COLOR.darkGray, fontFace: FONT.body } },
-    { text: FONT.heading, options: { fontSize: 20, color: COLOR.primary, fontFace: FONT.heading, bold: true } },
-  ], {
-    x: topRightX + 0.2, y: ROW1_Y + 0.42, w: topRightW - 0.4, h: 0.4,
-    valign: "middle",
-  });
-
-  slide.addText([
-    { text: "Body  ", options: { fontSize: 10, color: COLOR.darkGray, fontFace: FONT.body } },
-    { text: FONT.body, options: { fontSize: 16, color: COLOR.bodyText, fontFace: FONT.body } },
-  ], {
-    x: topRightX + 0.2, y: ROW1_Y + 0.85, w: topRightW - 0.4, h: 0.35,
-    valign: "middle",
-  });
-
-  // ── MIDDLE ROW: Tone | Audience | Descriptors (3 cards) ──
-  const ROW2_Y = ROW1_Y + topCardH + cardGap;
-  const midCardH = 1.55;
-  const colW3 = (CONTENT_W - cardGap * 2) / 3;
-  const col2X = MARGIN + colW3 + cardGap;
-  const col3X = MARGIN + (colW3 + cardGap) * 2;
-
-  // Tone of Voice card
   if (guidelines.tone_of_voice) {
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: MARGIN, y: ROW2_Y, w: colW3, h: midCardH,
-      rectRadius: 0.1, fill: { color: COLOR.lightGray },
-      line: { color: COLOR.midGray, width: 0.5 },
-    });
-    slide.addText("TONE OF VOICE", {
-      x: MARGIN + 0.18, y: ROW2_Y + 0.12, w: colW3 - 0.36, h: 0.28,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray,
-      bold: true, charSpacing: 2,
-    });
-    slide.addText(trunc(guidelines.tone_of_voice, 200), {
-      x: MARGIN + 0.18, y: ROW2_Y + 0.45, w: colW3 - 0.36, h: midCardH - 0.55,
-      fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
+    addSectionLabel(slide, "Tone of Voice", MARGIN, botY, colW3);
+    slide.addText(guidelines.tone_of_voice, {
+      x: MARGIN, y: botY + 0.3, w: colW3, h: botH - 0.3,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
     });
   }
 
-  // Audience card
   if (guidelines.target_demographic) {
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: col2X, y: ROW2_Y, w: colW3, h: midCardH,
-      rectRadius: 0.1, fill: { color: COLOR.lightGray },
-      line: { color: COLOR.midGray, width: 0.5 },
-    });
-    slide.addText("AUDIENCE", {
-      x: col2X + 0.18, y: ROW2_Y + 0.12, w: colW3 - 0.36, h: 0.28,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray,
-      bold: true, charSpacing: 2,
-    });
-    slide.addText(trunc(guidelines.target_demographic, 200), {
-      x: col2X + 0.18, y: ROW2_Y + 0.45, w: colW3 - 0.36, h: midCardH - 0.55,
-      fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
+    addVerticalDivider(slide, col2X - 0.075, botY, botH);
+    addSectionLabel(slide, "Audience", col2X, botY, colW3);
+    slide.addText(guidelines.target_demographic, {
+      x: col2X, y: botY + 0.3, w: colW3, h: botH - 0.3,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
     });
   }
 
-  // Brand Descriptors card
   if (guidelines.brand_descriptors?.length) {
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: col3X, y: ROW2_Y, w: colW3, h: midCardH,
-      rectRadius: 0.1, fill: { color: COLOR.lightGray },
-      line: { color: COLOR.midGray, width: 0.5 },
-    });
-    slide.addText("BRAND DESCRIPTORS", {
-      x: col3X + 0.18, y: ROW2_Y + 0.12, w: colW3 - 0.36, h: 0.28,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray,
-      bold: true, charSpacing: 2,
-    });
-    const descriptorText = guidelines.brand_descriptors.slice(0, 5).map((d) => `●  ${d}`).join("\n");
-    slide.addText(descriptorText, {
-      x: col3X + 0.18, y: ROW2_Y + 0.45, w: colW3 - 0.36, h: midCardH - 0.55,
-      fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-    });
-  }
-
-  // ── BOTTOM ROW: DO'S & DON'TS ──
-  const ROW3_Y = ROW2_Y + midCardH + cardGap;
-  const rules = guidelines.hard_rules;
-  if (rules) {
-    const panelW = (CONTENT_W - cardGap) / 2;
-    const panelH = SLIDE_H - ROW3_Y - 0.35;
-
-    if (rules.dos?.length) {
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: MARGIN, y: ROW3_Y, w: panelW, h: panelH,
-        rectRadius: 0.12, fill: { color: "E8F5E9" },
-        line: { color: "66BB6A", width: 1.5 },
-      });
-      slide.addText("DO", {
-        x: MARGIN + 0.2, y: ROW3_Y + 0.12, w: panelW - 0.4, h: 0.38,
-        fontSize: 14, fontFace: FONT.heading, color: "2E7D32", bold: true,
-      });
-      const dosText = rules.dos.slice(0, 3).map((d) => `✓  ${d}`).join("\n\n");
-      slide.addText(dosText, {
-        x: MARGIN + 0.2, y: ROW3_Y + 0.55, w: panelW - 0.4, h: panelH - 0.65,
-        fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
-
-    if (rules.donts?.length) {
-      const dontX = MARGIN + panelW + cardGap;
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: dontX, y: ROW3_Y, w: panelW, h: panelH,
-        rectRadius: 0.12, fill: { color: "FFEBEE" },
-        line: { color: "EF5350", width: 1.5 },
-      });
-      slide.addText("DON'T", {
-        x: dontX + 0.2, y: ROW3_Y + 0.12, w: panelW - 0.4, h: 0.38,
-        fontSize: 14, fontFace: FONT.heading, color: "C62828", bold: true,
-      });
-      const dontsText = rules.donts.slice(0, 3).map((d) => `✗  ${d}`).join("\n\n");
-      slide.addText(dontsText, {
-        x: dontX + 0.2, y: ROW3_Y + 0.55, w: panelW - 0.4, h: panelH - 0.65,
-        fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
+    addVerticalDivider(slide, col3X - 0.075, botY, botH);
+    addSectionLabel(slide, "Brand Descriptors", col3X, botY, colW3);
+    slide.addText(
+      guidelines.brand_descriptors.slice(0, 5).map((d, i) => `${i + 1}.  ${d}`).join("\n\n"),
+      { x: col3X, y: botY + 0.3, w: colW3, h: botH - 0.3, fontSize: 12, fontFace: FONT.body, color: COLOR.bodyText, valign: "top" }
+    );
   }
 }
 
-// ── 3. PER-PRODUCT SLIDES ───────────────────────────────────────────────────
+// ── Product dispatcher ───────────────────────────────────────────────────────
 function buildProduct(product, index) {
-  const research = product.research || {};
-  const prodData = research.product || {};
-  const competitors = research.competitors || [];
-  const keywords = research.keywords || [];
-  const gap = research.gap_analysis || {};
-  const creative = product.creative_direction || {};
+  const name = product.name || `Product ${index + 1}`;
+  addSectionSlide(name, product.asin ? `ASIN: ${product.asin}` : null);
+
+  buildProductSnapshot(product);
+  buildMarketGap(product);
+  buildCreativePositioning(product);
+  buildCreativeVisual(product);
+  buildCompetitorLandscape(product);
+
   const deliverables = product.deliverables || {};
 
-  // ── Product overview — 2-column layout
-  // Left column (~1/3): Full product info (description, price, ratings, USPs, complaints)
-  // Right column (~2/3): Keywords, visual patterns, opportunities, complaints to address
-  {
-    const overviewTitle = [product.name || `Product ${index + 1}`, product.asin ? `ASIN: ${product.asin}` : null].filter(Boolean).join(" | ");
-    const slide = addContentSlide(overviewTitle);
-
-    const topY = CONTENT_START_Y;
-    const leftW = CONTENT_W / 3; // 1/3 width for left column
-    const colGap = 0.25;
-    const rightX = MARGIN + leftW + colGap;
-    const rightW = CONTENT_W - leftW - colGap; // 2/3 width for right column
-    const availH = SLIDE_H - topY - 0.25; // remaining height
-
-    // ═══════════════════════════════════════════════════════
-    // LEFT COLUMN (1/3): Full Product Information
-    // ═══════════════════════════════════════════════════════
-
-    // ── Left column background card
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: MARGIN - 0.1, y: topY - 0.1, w: leftW + 0.2, h: availH + 0.1,
-      rectRadius: 0.1, fill: { color: COLOR.lightGray },
-      line: { color: COLOR.midGray, width: 0.5 },
-    });
-
-    let infoY = topY + 0.1;
-
-    // ── Image Grid: 2 rows x 4 columns at the top (no gaps)
-    if (prodData.image_urls?.length) {
-      const imgRows = 2;
-      const imgCols = 4;
-      const imgCount = Math.min(prodData.image_urls.length, 8);
-
-      // 1:1 square cells, slightly reduced to leave room for USPs
-      const cellW = (leftW - 0.3) / imgCols * 0.92;
-      const cellH = cellW; // 1:1 square
-
-      let imgX = MARGIN + 0.15;
-      let imgY = infoY;
-      let col = 0;
-      let row = 0;
-
-      for (const url of prodData.image_urls.slice(0, imgCount)) {
-        const imgData = imageCache.get(url);
-        if (!imgData) { col++; if (col >= imgCols) { col = 0; row++; imgY += cellH; imgX = MARGIN + 0.15; } else { imgX += cellW; } continue; }
-        slide.addImage({
-          data: imgData,
-          x: imgX, y: imgY, w: cellW, h: cellH,
-          sizing: { type: "contain", w: cellW, h: cellH },
-        });
-        col++;
-        if (col >= imgCols) {
-          col = 0;
-          row++;
-          imgY += cellH;
-          imgX = MARGIN + 0.15;
-        } else {
-          imgX += cellW;
-        }
-      }
-      infoY += cellH * imgRows + 0.15;
-    }
-
-    // Description (full length)
-    if (prodData.description) {
-      slide.addText("DESCRIPTION", {
-        x: MARGIN + 0.15, y: infoY, w: leftW - 0.3, h: 0.28,
-        fontSize: 9, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      slide.addText(prodData.description, {
-        x: MARGIN + 0.15, y: infoY + 0.3, w: leftW - 0.3, h: 1.0,
-        fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-      infoY += 1.4;
-    }
-
-    // Price + rating
-    const metaLine = [
-      prodData.price ? `Price: ${prodData.price}` : null,
-      prodData.rating ? `★ ${prodData.rating}` : null,
-    ].filter(Boolean).join("   |   ");
-    if (metaLine) {
-      slide.addText(metaLine, {
-        x: MARGIN + 0.15, y: infoY, w: leftW - 0.3, h: 0.35,
-        fontSize: 11, fontFace: FONT.body, color: COLOR.darkGray, bold: true,
-      });
-      infoY += 0.45;
-    }
-
-    // Divider
-    slide.addShape(pptx.shapes.LINE, {
-      x: MARGIN + 0.1, y: infoY, w: leftW - 0.2, h: 0,
-      line: { color: COLOR.midGray, width: 0.75 },
-    });
-    infoY += 0.15;
-
-    // Key USPs
-    slide.addText("Key USPs", {
-      x: MARGIN + 0.15, y: infoY, w: leftW - 0.3, h: 0.28,
-      fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-    });
-    const contentRemaining = availH - (infoY - topY) - 0.32;
-    const hasOwnComplaints = prodData.complaints?.length;
-    const uspContentH = hasOwnComplaints ? contentRemaining / 2 : contentRemaining;
-    if (prodData.usps?.length) {
-      slide.addText(prodData.usps.map((u) => `●  ${u}`).join("\n"), {
-        x: MARGIN + 0.15, y: infoY + 0.32, w: leftW - 0.3, h: uspContentH,
-        fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
-
-    if (hasOwnComplaints) {
-      const compSectionY = infoY + 0.32 + uspContentH + 0.08;
-      slide.addShape(pptx.shapes.LINE, {
-        x: MARGIN + 0.1, y: compSectionY, w: leftW - 0.2, h: 0,
-        line: { color: COLOR.midGray, width: 0.75 },
-      });
-      slide.addText("Known Complaints", {
-        x: MARGIN + 0.15, y: compSectionY + 0.1, w: leftW - 0.3, h: 0.28,
-        fontSize: 11, fontFace: FONT.heading, color: "C62828", bold: true,
-      });
-      slide.addText(prodData.complaints.map((c) => `●  ${c}`).join("\n"), {
-        x: MARGIN + 0.15, y: compSectionY + 0.4, w: leftW - 0.3, h: contentRemaining - uspContentH - 0.48,
-        fontSize: 9, fontFace: FONT.body, color: "C62828", italic: true, valign: "top",
-      });
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // RIGHT COLUMN (2/3): 2x2 Grid Layout
-    // ═══════════════════════════════════════════════════════
-    // Top Left: Keywords          | Top Right: Complaints to Address
-    // Bottom Left: Visual Patterns | Bottom Right: Differentiation Strategies
-
-    const colGap2 = 0.15;
-    const rowGap2 = 0.15;
-    const cardW2 = (rightW - colGap2) / 2; // Half width minus gap
-    const cardH2 = (availH - rowGap2) / 2; // Half height minus gap
-
-    // ── Top Left Card: Keywords + Visual Implication
-    if (keywords.length) {
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: rightX, y: topY, w: cardW2, h: cardH2,
-        rectRadius: 0.12, fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      slide.addText("Top Keywords & Visual Intent", {
-        x: rightX + 0.15, y: topY + 0.1, w: cardW2 - 0.3, h: 0.3,
-        fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      // 4 keywords max, then the visual_implication summary below
-      const kwRuns = [];
-      keywords.slice(0, 4).forEach((kw, i) => {
-        const vol = kw.average_monthly_search_volume ? `  —  ${Number(kw.average_monthly_search_volume).toLocaleString()} avg. monthly searches` : "";
-        if (i > 0) kwRuns.push({ text: "\n", options: { fontSize: 4 } });
-        kwRuns.push({
-          text: `${trunc(kw.keyword || "", 32)}${vol}\n`,
-          options: { fontSize: 9, bold: true, color: COLOR.bodyText, fontFace: FONT.body },
-        });
-      });
-      if (research.visual_implication) {
-        kwRuns.push({ text: "\n", options: { fontSize: 4 } });
-        kwRuns.push({
-          text: trunc(research.visual_implication, 220),
-          options: { fontSize: 8, italic: true, color: COLOR.primary, fontFace: FONT.body },
-        });
-      }
-      slide.addText(kwRuns, {
-        x: rightX + 0.15, y: topY + 0.42, w: cardW2 - 0.3, h: cardH2 - 0.52,
-        valign: "top",
-      });
-    }
-
-    // ── Top Right Card: Complaints to Address
-    const complaintItems = (gap.complaints_to_address || []).slice(0, 5);
-    if (complaintItems.length) {
-      const rightCardX = rightX + cardW2 + colGap2;
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: rightCardX, y: topY, w: cardW2, h: cardH2,
-        rectRadius: 0.12, fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      slide.addText("Complaints to Address", {
-        x: rightCardX + 0.15, y: topY + 0.1, w: cardW2 - 0.3, h: 0.3,
-        fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      slide.addText(complaintItems.map((i) => `●  ${i}`).join("\n\n"), {
-        x: rightCardX + 0.15, y: topY + 0.42, w: cardW2 - 0.3, h: cardH2 - 0.52,
-        fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
-
-    // ── Bottom Left Card: Visual Patterns
-    if (gap.visual_patterns?.length) {
-      const bottomY = topY + cardH2 + rowGap2;
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: rightX, y: bottomY, w: cardW2, h: cardH2,
-        rectRadius: 0.12, fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      slide.addText("Visual Patterns", {
-        x: rightX + 0.15, y: bottomY + 0.1, w: cardW2 - 0.3, h: 0.3,
-        fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      slide.addText(gap.visual_patterns.slice(0, 4).map((i) => `●  ${i}`).join("\n\n"), {
-        x: rightX + 0.15, y: bottomY + 0.42, w: cardW2 - 0.3, h: cardH2 - 0.52,
-        fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
-
-    // ── Bottom Right Card: Differentiation Strategies
-    if (gap.differentiation_opportunities?.length) {
-      const bottomY = topY + cardH2 + rowGap2;
-      const rightCardX = rightX + cardW2 + colGap2;
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: rightCardX, y: bottomY, w: cardW2, h: cardH2,
-        rectRadius: 0.12, fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      slide.addText("Differentiation Strategies", {
-        x: rightCardX + 0.15, y: bottomY + 0.1, w: cardW2 - 0.3, h: 0.3,
-        fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      slide.addText(gap.differentiation_opportunities.slice(0, 4).map((i) => `●  ${i}`).join("\n\n"), {
-        x: rightCardX + 0.15, y: bottomY + 0.42, w: cardW2 - 0.3, h: cardH2 - 0.52,
-        fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
-  }
-
-  // ── Competitors — all on one slide (3-column layout)
-  if (competitors.length) {
-    const slide = addContentSlide("Competitor Landscape");
-    const AVAIL_H = SLIDE_H - CONTENT_START_Y - 0.15;
-    const cols = 3;
-    const colGap = 0.2;
-    const colW = (CONTENT_W - colGap * (cols - 1)) / cols;
-    const cardGap = 0.15;
-
-    // Calculate how many competitors can fit per column
-    const competitorsPerCol = Math.ceil(competitors.length / cols);
-
-    // Calculate card height based on available space
-    const cardsInTallestCol = competitorsPerCol;
-    const cardH = (AVAIL_H - cardGap * (cardsInTallestCol - 1)) / cardsInTallestCol;
-
-    // Image grid dimensions (2 rows, 4 columns, 1:1 ratio)
-    const imgGridPadding = 0.1;
-    const imgGridW = colW - imgGridPadding * 2;
-    const imgCols = 4;
-    const imgRows = 2;
-    const imgGap = 0.06;
-    const imgCellSize = Math.min(
-      (imgGridW - imgGap * (imgCols - 1)) / imgCols,
-      (cardH * 0.35 - imgGap * (imgRows - 1)) / imgRows
-    );
-    const imgGridH = imgCellSize * imgRows + imgGap * (imgRows - 1);
-
-    competitors.forEach((comp, ci) => {
-      // Determine column and row position
-      const col = ci % cols;
-      const row = Math.floor(ci / cols);
-
-      const x = MARGIN + col * (colW + colGap);
-      const y = CONTENT_START_Y + row * (cardH + cardGap);
-
-      // Card background
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x, y, w: colW, h: cardH,
-        rectRadius: 0.08,
-        fill: { color: ci % 2 === 0 ? COLOR.lightGray : COLOR.white },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-
-      let innerY = y + 0.08;
-
-      // Name + ASIN (one line) with hyperlink
-      const nameW = colW - imgGridPadding * 2;
-      const nameLine = [
-        { text: trunc(comp.name || "Competitor", 30), options: { fontSize: 11, bold: true, color: COLOR.primary, fontFace: FONT.heading } },
-      ];
-      if (comp.asin) {
-        nameLine.push({ text: "  |  ", options: { fontSize: 10, color: COLOR.darkGray } });
-        nameLine.push({
-          text: comp.asin,
-          options: {
-            fontSize: 10, color: COLOR.accent || COLOR.secondary,
-            hyperlink: { url: `https://www.amazon.com/dp/${comp.asin}`, tooltip: `View on Amazon: ${comp.asin}` },
-          },
-        });
-      }
-      slide.addText(nameLine, {
-        x: x + imgGridPadding, y: innerY, w: nameW, h: 0.3,
-        fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      innerY += 0.32;
-
-      // Price and rating (one line)
-      const metrics = [
-        comp.price ? `${comp.price}` : null,
-        comp.rating ? `★ ${comp.rating}` : null,
-      ].filter(Boolean).join("   |   ");
-      if (metrics) {
-        slide.addText(metrics, {
-          x: x + imgGridPadding, y: innerY, w: nameW, h: 0.25,
-          fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray, valign: "top",
-        });
-      }
-      innerY += 0.28;
-
-      // Image grid (2 rows x 4 columns, 1:1 ratio)
-      if (comp.image_urls?.length) {
-        const maxImages = Math.min(comp.image_urls.length, imgRows * imgCols);
-        let imgX = x + imgGridPadding;
-        let imgY = innerY;
-        let imgCol = 0;
-        let imgRow = 0;
-
-        for (let i = 0; i < maxImages; i++) {
-          const url = comp.image_urls[i];
-          const imgData = imageCache.get(url);
-          if (!imgData) { imgCol++; if (imgCol >= imgCols) { imgCol = 0; imgRow++; imgY += imgCellSize + imgGap; imgX = x + imgGridPadding; } else { imgX += imgCellSize + imgGap; } continue; }
-          slide.addImage({
-            data: imgData,
-            x: imgX, y: imgY, w: imgCellSize, h: imgCellSize,
-            sizing: { type: "contain", w: imgCellSize, h: imgCellSize },
-          });
-          imgCol++;
-          if (imgCol >= imgCols) {
-            imgCol = 0;
-            imgRow++;
-            imgY += imgCellSize + imgGap;
-            imgX = x + imgGridPadding;
-          } else {
-            imgX += imgCellSize + imgGap;
-          }
-        }
-        innerY += imgGridH + 0.08;
-      }
-
-      // Keywords info
-      const kwInfo = [
-        comp.intersecting_keywords != null ? `${comp.intersecting_keywords} intersecting keywords` : null,
-        comp.avg_position != null ? `${comp.avg_position} average SERP position` : null,
-      ].filter(Boolean).join("   |   ");
-      if (kwInfo) {
-        slide.addText(kwInfo, {
-          x: x + imgGridPadding, y: innerY, w: nameW, h: 0.25,
-          fontSize: 8, fontFace: FONT.body, color: COLOR.darkGray, valign: "top",
-        });
-        innerY += 0.28;
-      }
-
-      // USPs
-      if (comp.usps?.length) {
-        slide.addText("USPs", {
-          x: x + imgGridPadding, y: innerY, w: nameW, h: 0.22,
-          fontSize: 9, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-        });
-        const uspText = comp.usps.map((u) => `●  ${trunc(u, 80)}`).join("\n");
-        slide.addText(uspText, {
-          x: x + imgGridPadding, y: innerY + 0.22, w: nameW, h: cardH - innerY + y - 0.3,
-          fontSize: 8, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-        });
-      }
-
-      // Complaints
-      if (comp.complaints?.length) {
-        // Find the Y position for complaints (after USPs)
-        const uspHeight = comp.usps?.length ? 0.22 + Math.min(0.8, cardH - innerY + y - 0.5) : 0;
-        const complaintsY = innerY + uspHeight;
-
-        slide.addText("Complaints", {
-          x: x + imgGridPadding, y: complaintsY, w: nameW, h: 0.22,
-          fontSize: 9, fontFace: FONT.heading, color: "C62828", bold: true,
-        });
-        const compText = comp.complaints.map((c) => `●  ${trunc(c, 80)}`).join("\n");
-        slide.addText(compText, {
-          x: x + imgGridPadding, y: complaintsY + 0.22, w: nameW, h: cardH - complaintsY + y - 0.3,
-          fontSize: 8, fontFace: FONT.body, color: "C62828", italic: true, valign: "top",
-        });
-      }
-    });
-
-    // ── All competitor images on one slide (organized by rows)
-    const allImages = competitors.filter((comp) => comp.image_urls?.length).map((comp) => ({
-      name: comp.name || comp.asin || "Competitor",
-      urls: comp.image_urls,
-    }));
-
-    if (allImages.length > 0) {
-      const imgSlide = addContentSlide("Competitor Listing Images");
-      const imgsPerRow = 8;
-      const rowGap = 0.15; // gap between competitor rows
-      const colGap = 0; // no gaps between columns as requested
-
-      // Calculate image dimensions to fit 8 images across
-      const imgW = (CONTENT_W - colGap * (imgsPerRow - 1)) / imgsPerRow;
-      // Maintain proportional ratio - use the image's natural aspect ratio
-      const imgH = imgW; // 1:1 square ratio
-
-      let iy = CONTENT_START_Y;
-
-      allImages.forEach((comp) => {
-        // Add competitor name label at start of row
-        imgSlide.addText(`${comp.name}`, {
-          x: MARGIN, y: iy, w: CONTENT_W, h: 0.25,
-          fontSize: 9, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-        });
-        iy += 0.28;
-
-        // Add images in rows of 8
-        const maxImages = Math.min(comp.urls.length, imgsPerRow);
-        let ix = MARGIN;
-
-        for (let i = 0; i < maxImages; i++) {
-          const imgData = imageCache.get(comp.urls[i]);
-          if (!imgData) { ix += imgW + colGap; continue; }
-          imgSlide.addImage({
-            data: imgData,
-            x: ix, y: iy, w: imgW, h: imgH,
-            sizing: { type: "contain", w: imgW, h: imgH },
-          });
-          ix += imgW + colGap;
-        }
-
-        // Move to next row position
-        iy += imgH + rowGap;
-      });
-    }
-  }
-
-  // ── Creative direction
-  {
-    const slide = addContentSlide("Creative Direction");
-    let y = CONTENT_START_Y;
-
-    // ── Positioning statement (full width)
-    if (creative.positioning_statement) {
-      slide.addText("Positioning", {
-        x: MARGIN, y, w: CONTENT_W, h: 0.25,
-        fontSize: 12, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      slide.addText(creative.positioning_statement, {
-        x: MARGIN, y: y + 0.28, w: CONTENT_W, h: 0.55,
-        fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText, italic: true,
-      });
-      y += 0.95;
-    }
-
-    // ── Tone of Voice (text box below positioning)
-    if (guidelines.tone_of_voice) {
-      slide.addText("Tone of Voice", {
-        x: MARGIN, y, w: CONTENT_W, h: 0.25,
-        fontSize: 12, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      slide.addText(guidelines.tone_of_voice, {
-        x: MARGIN, y: y + 0.28, w: CONTENT_W, h: 0.55,
-        fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText,
-      });
-      y += 0.95;
-    }
-
-    // ── Two-column: Key Messages (left) | Visual Direction (right)
-    const colY = y;
-    const leftW = CONTENT_W * 0.48;
-    const rightW = CONTENT_W * 0.48;
-    const rightX = MARGIN + CONTENT_W * 0.52;
-
-    // Key Messages — one card per message
-    if (creative.key_messages?.length) {
-      slide.addText("Key Messages", {
-        x: MARGIN, y: colY, w: leftW, h: 0.28,
-        fontSize: 12, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      const cardH = 0.33;
-      const cardGap = 0.1;
-      creative.key_messages.forEach((msg, i) => {
-        const cy = colY + 0.38 + i * (cardH + cardGap);
-        // Light background card
-        slide.addShape(pptx.shapes.RECTANGLE, {
-          x: MARGIN, y: cy, w: leftW, h: cardH,
-          fill: { color: COLOR.lightGray },
-          line: { color: COLOR.midGray, width: 0.5 },
-        });
-        // Accent left bar
-        slide.addShape(pptx.shapes.RECTANGLE, {
-          x: MARGIN, y: cy, w: 0.06, h: cardH,
-          fill: { color: COLOR.primary },
-          line: { color: COLOR.primary },
-        });
-        slide.addText(`${i + 1}.  ${msg}`, {
-          x: MARGIN + 0.1, y: cy, w: leftW - 0.1, h: cardH,
-          fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText,
-          valign: "middle",
-        });
-      });
-    }
-
-    // Visual Direction — 6-row structured card
-    if (creative.visual_direction && typeof creative.visual_direction === "object") {
-      slide.addText("Visual Direction", {
-        x: rightX, y: colY, w: rightW, h: 0.28,
-        fontSize: 12, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      const vd = creative.visual_direction;
-      const vdRows = [
-        ["Color World", vd.color_world],
-        ["Lighting Signature", vd.lighting_signature],
-        ["Model Direction", vd.model_direction],
-        ["Prop Styling", vd.prop_styling],
-        ["Environment / Surface", vd.environment_surface_direction],
-        ["Mood", vd.mood],
-      ];
-      const cardTop = colY + 0.35;
-      const cardH = 3.2;
-      slide.addShape(pptx.shapes.RECTANGLE, {
-        x: rightX, y: cardTop, w: rightW, h: cardH,
-        fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      const rowH = cardH / vdRows.length;
-      vdRows.forEach(([label, value], i) => {
-        const ry = cardTop + i * rowH;
-        if (i > 0) {
-          slide.addShape(pptx.shapes.LINE, {
-            x: rightX + 0.1, y: ry, w: rightW - 0.2, h: 0,
-            line: { color: COLOR.midGray, width: 0.5 },
-          });
-        }
-        slide.addText([
-          { text: `${label.toUpperCase()}\n`, options: { bold: true, fontSize: 7, color: COLOR.darkGray, charSpacing: 1 } },
-          { text: value || "—", options: { fontSize: 8, color: COLOR.bodyText } },
-        ], {
-          x: rightX + 0.12, y: ry + 0.04, w: rightW - 0.24, h: rowH - 0.08,
-          fontFace: FONT.body, valign: "top", shrinkText: true,
-        });
-      });
-    }
-
-    // ── Competitive Differentiation — full-width accent box at bottom
-    if (creative.competitive_differentiation) {
-      const boxY = SLIDE_H - 1.55;
-      const boxH = 0.95;
-      // Accent bar on left
-      slide.addShape(pptx.shapes.RECTANGLE, {
-        x: MARGIN, y: boxY, w: 0.08, h: boxH,
-        fill: { color: COLOR.accent || COLOR.secondary || COLOR.primary },
-        line: { color: COLOR.accent || COLOR.secondary || COLOR.primary },
-      });
-      // Light background
-      slide.addShape(pptx.shapes.RECTANGLE, {
-        x: MARGIN + 0.08, y: boxY, w: CONTENT_W - 0.08, h: boxH,
-        fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      slide.addText("Competitive Differentiation", {
-        x: MARGIN + 0.22, y: boxY + 0.06, w: CONTENT_W - 0.3, h: 0.25,
-        fontSize: 10, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-      });
-      slide.addText(creative.competitive_differentiation, {
-        x: MARGIN + 0.22, y: boxY + 0.33, w: CONTENT_W - 0.3, h: 0.55,
-        fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
-  }
-
-  // ── Deliverables ──────────────────────────────────────────────────────────
-
-  // Main image — 5 versions, dedicated section
   if (Array.isArray(deliverables.main_image) && deliverables.main_image.length) {
     addSectionSlide("Main Image", `${deliverables.main_image.length} versions`);
-    for (const v of deliverables.main_image) {
-      buildMainImageSlide(v);
-    }
+    buildMainImageOverview(deliverables.main_image);
   }
 
-  // Listing images — object { sequence_strategy, images[7] }
   const listing = deliverables.listing_images;
-  if (listing && Array.isArray(listing.images) && listing.images.length) {
-    addSectionSlide("Listing Images", `${listing.images.length} images — three-act narrative`);
-
-    if (listing.sequence_strategy) {
-      const slide = addContentSlide("Sequence Strategy");
-      slide.addText(listing.sequence_strategy, {
-        x: MARGIN, y: CONTENT_START_Y, w: CONTENT_W, h: 4.0,
-        fontSize: 11, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
-      });
-    }
-
-    for (const img of listing.images) {
-      const subtitleBits = [
-        img.role_in_sequence ? `Role: ${img.role_in_sequence}` : null,
-        img.image_type ? `Type: ${img.image_type}` : null,
-      ].filter(Boolean);
-      buildDeliverableSlide(
-        `Listing Image — Slot ${img.slot_number}`,
-        img,
-        subtitleBits.join("   |   ") || null,
-      );
-    }
+  if (listing?.images?.length) {
+    addSectionSlide("Listing Images", "7-image narrative sequence");
+    buildListingImagesOverview(listing);
   }
 
-  // A+ — single specialist, 6 modules
   if (deliverables.aplus?.modules?.length) {
     addSectionSlide("A+ Content", `${deliverables.aplus.modules.length} modules`);
-    for (const mod of deliverables.aplus.modules) {
-      buildAplusModuleSlide(mod);
-    }
+    buildAplusContentSlide(deliverables.aplus.modules);
   }
 
-  // Shot List — per-product section, one slide per shot type
   if (product.shot_list?.shots_by_type) {
     buildShotListSection(product.shot_list);
   }
 }
 
-// ── Deliverable slide builder ───────────────────────────────────────────────
-/**
- * Generic deliverable slide used by Listing Images.
- * Renders wireframe left, visual_concept + strategy right, copy below (if string).
- */
-function buildDeliverableSlide(title, deliverable, subtitle) {
-  const slide = addContentSlide(title);
-  if (subtitle) {
-    slide.addText(subtitle, {
-      x: MARGIN, y: 1.08, w: CONTENT_W, h: 0.3,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray, italic: true,
-    });
-  }
+// ── Product Snapshot ─────────────────────────────────────────────────────────
+function buildProductSnapshot(product) {
+  const prodData = product.research?.product || {};
+  const slide = addContentSlide(product.name || "Product Overview");
 
-  const wireW = 3.2;
-  const wireH = 3.2;
-  const wireX = MARGIN;
-  const wireY = CONTENT_START_Y + 0.1;
+  const leftW = CONTENT_W * 0.35;
+  const rightX = MARGIN + leftW + 0.35;
+  const rightW = CONTENT_W - leftW - 0.35;
+  const topY = CONTENT_START_Y;
+  const availH = SLIDE_H - topY - 0.3;
 
-  const copyForWireframe = typeof deliverable.copy === "string" ? deliverable.copy : null;
-  renderWireframe(slide, deliverable.wireframe_description || "", copyForWireframe, wireX, wireY, wireW, wireH);
-
-  const textX = wireX + wireW + 0.4;
-  const textW = CONTENT_W - wireW - 0.4;
-  let ty = wireY;
-
-  if (deliverable.visual_concept) {
-    slide.addText("Visual Concept", {
-      x: textX, y: ty, w: textW, h: 0.3,
-      fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-    });
-    slide.addText(deliverable.visual_concept, {
-      x: textX, y: ty + 0.3, w: textW, h: 1.4,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top", shrinkText: true,
-    });
-    ty += 1.75;
-  }
-
-  if (deliverable.strategy) {
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: textX, y: ty, w: textW, h: 1.05,
-      rectRadius: 0.08, fill: { color: COLOR.lightGray },
-    });
-    slide.addText([
-      { text: "Strategy: ", options: { bold: true, fontSize: 9, color: COLOR.primary } },
-      { text: deliverable.strategy, options: { fontSize: 9, color: COLOR.bodyText } },
-    ], {
-      x: textX + 0.1, y: ty + 0.05, w: textW - 0.2, h: 0.95,
-      fontFace: FONT.body, valign: "top", shrinkText: true,
-    });
-    ty += 1.15;
-  }
-
-  if (typeof deliverable.copy === "string" && deliverable.copy.trim()) {
-    const copyY = Math.max(ty + 0.1, wireY + wireH + 0.25);
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: MARGIN, y: copyY, w: CONTENT_W, h: 0.95,
-      rectRadius: 0.08, fill: { color: "F8F8F8" },
-      line: { color: COLOR.midGray, width: 0.5 },
-    });
-    slide.addText([
-      { text: "Copy\n", options: { bold: true, fontSize: 9, color: COLOR.primary } },
-      { text: deliverable.copy, options: { fontSize: 9, color: COLOR.bodyText } },
-    ], {
-      x: MARGIN + 0.15, y: copyY + 0.08, w: CONTENT_W - 0.3, h: 0.8,
-      fontFace: FONT.body, valign: "top", shrinkText: true,
-    });
-  }
-}
-
-// ── Main Image version slide ────────────────────────────────────────────────
-function buildMainImageSlide(v) {
-  const title = `Main Image v${v.version_number} — ${v.strategy_name || "Untitled"}`;
-  const slide = addContentSlide(title);
-
-  const wireW = 3.2;
-  const wireH = 3.2;
-  const wireX = MARGIN;
-  const wireY = CONTENT_START_Y + 0.1;
-  renderWireframe(slide, v.wireframe_description || "", null, wireX, wireY, wireW, wireH);
-
-  const textX = wireX + wireW + 0.4;
-  const textW = CONTENT_W - wireW - 0.4;
-  let ty = wireY;
-
-  // Strategy name + feature badges
-  const chipPairs = [
-    ["STRATEGY", v.strategy_name],
-    ["FEATURE", v.feature],
-  ].filter(([, val]) => !!val);
-  if (chipPairs.length) {
-    chipPairs.forEach(([label, value], i) => {
-      const chipY = ty + i * 0.5;
-      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: textX, y: chipY, w: textW, h: 0.42,
-        rectRadius: 0.06, fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      slide.addText([
-        { text: `${label}  `, options: { bold: true, fontSize: 8, color: COLOR.darkGray, charSpacing: 1.5 } },
-        { text: value, options: { fontSize: 10, color: COLOR.bodyText } },
-      ], {
-        x: textX + 0.12, y: chipY + 0.05, w: textW - 0.24, h: 0.32,
-        fontFace: FONT.body, valign: "middle", shrinkText: true,
-      });
-    });
-    ty += chipPairs.length * 0.5 + 0.1;
-  }
-
-  if (v.visual_concept) {
-    slide.addText("Visual Concept", {
-      x: textX, y: ty, w: textW, h: 0.3,
-      fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-    });
-    slide.addText(v.visual_concept, {
-      x: textX, y: ty + 0.3, w: textW, h: 1.2,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top", shrinkText: true,
-    });
-    ty += 1.55;
-  }
-
-  if (v.strategy) {
-    const strategyY = Math.max(ty, wireY + wireH + 0.2);
-    const availH = SLIDE_H - strategyY - 0.35;
-    const boxH = Math.min(1.2, availH);
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: MARGIN, y: strategyY, w: CONTENT_W, h: boxH,
-      rectRadius: 0.08, fill: { color: COLOR.lightGray },
-    });
-    slide.addText([
-      { text: "Strategy: ", options: { bold: true, fontSize: 9, color: COLOR.primary } },
-      { text: v.strategy, options: { fontSize: 9, color: COLOR.bodyText } },
-    ], {
-      x: MARGIN + 0.15, y: strategyY + 0.08, w: CONTENT_W - 0.3, h: boxH - 0.16,
-      fontFace: FONT.body, valign: "top", shrinkText: true,
-    });
-  }
-}
-
-// ── A+ Module slide ─────────────────────────────────────────────────────────
-function buildAplusModuleSlide(mod) {
-  const title = `A+ Module ${mod.module_number} — ${mod.module_role || "module"}`;
-  const slide = addContentSlide(title);
-  const subtitle = mod.dimensions ? `Dimensions: ${mod.dimensions}` : null;
-  if (subtitle) {
-    slide.addText(subtitle, {
-      x: MARGIN, y: 1.08, w: CONTENT_W, h: 0.3,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray, italic: true,
-    });
-  }
-
-  const wireW = 3.2;
-  const wireH = 3.2;
-  const wireX = MARGIN;
-  const wireY = CONTENT_START_Y + 0.1;
-  renderWireframe(slide, mod.wireframe_description || "", null, wireX, wireY, wireW, wireH);
-
-  const textX = wireX + wireW + 0.4;
-  const textW = CONTENT_W - wireW - 0.4;
-  let ty = wireY;
-
-  if (mod.visual_concept) {
-    slide.addText("Visual Concept", {
-      x: textX, y: ty, w: textW, h: 0.3,
-      fontSize: 11, fontFace: FONT.heading, color: COLOR.primary, bold: true,
-    });
-    slide.addText(mod.visual_concept, {
-      x: textX, y: ty + 0.3, w: textW, h: 1.3,
-      fontSize: 9, fontFace: FONT.body, color: COLOR.bodyText, valign: "top", shrinkText: true,
-    });
-    ty += 1.65;
-  }
-
-  if (mod.strategy) {
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: textX, y: ty, w: textW, h: 1.3,
-      rectRadius: 0.08, fill: { color: COLOR.lightGray },
-    });
-    slide.addText([
-      { text: "Strategy: ", options: { bold: true, fontSize: 9, color: COLOR.primary } },
-      { text: mod.strategy, options: { fontSize: 9, color: COLOR.bodyText } },
-    ], {
-      x: textX + 0.1, y: ty + 0.05, w: textW - 0.2, h: 1.2,
-      fontFace: FONT.body, valign: "top", shrinkText: true,
-    });
-  }
-
-  // Copy block — role-specific shape
-  const copyObj = mod.copy || {};
-  const copyY = wireY + wireH + 0.25;
-  const copyH = SLIDE_H - copyY - 0.35;
-  if (copyH > 0.5) {
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: MARGIN, y: copyY, w: CONTENT_W, h: copyH,
-      rectRadius: 0.1, fill: { color: "F8F8F8" },
-      line: { color: COLOR.midGray, width: 0.5 },
-    });
-    const runs = [
-      { text: "Copy\n", options: { bold: true, fontSize: 9, color: COLOR.primary } },
-    ];
-    if (mod.module_role === "hero_with_icons") {
-      if (copyObj.tagline) runs.push({ text: `Tagline: ${copyObj.tagline}\n`, options: { fontSize: 9, color: COLOR.bodyText } });
-      if (copyObj.product_name) runs.push({ text: `Product: ${copyObj.product_name}\n`, options: { fontSize: 9, color: COLOR.bodyText } });
-      if (copyObj.description) runs.push({ text: `Description: ${copyObj.description}\n`, options: { fontSize: 9, color: COLOR.bodyText } });
-      if (Array.isArray(copyObj.icons)) {
-        copyObj.icons.forEach((icon, i) => {
-          runs.push({
-            text: `Icon ${i + 1}: ${icon.label || ""} — ${icon.description || ""}\n`,
-            options: { fontSize: 9, color: COLOR.bodyText },
-          });
+  // Left: image grid (2 rows × 4 cols, 1:1 cells)
+  let leftY = topY;
+  if (prodData.image_urls?.length) {
+    const imgCols = 4;
+    const cellW = (leftW - 0.05) / imgCols;
+    const cellH = cellW;
+    const imgCount = Math.min(prodData.image_urls.length, 8);
+    let imgX = MARGIN;
+    let imgY = leftY;
+    let col = 0;
+    for (const url of prodData.image_urls.slice(0, imgCount)) {
+      const imgData = imageCache.get(url);
+      if (imgData) {
+        slide.addImage({
+          data: imgData, x: imgX, y: imgY,
+          sizing: { type: "contain", w: cellW, h: cellH },
         });
       }
-    } else {
-      if (copyObj.headline) runs.push({ text: `Headline: ${copyObj.headline}\n`, options: { fontSize: 9, color: COLOR.bodyText } });
-      if (copyObj.body) runs.push({ text: `Body: ${copyObj.body}\n`, options: { fontSize: 9, color: COLOR.bodyText } });
+      col++;
+      if (col >= imgCols) { col = 0; imgY += cellH; imgX = MARGIN; }
+      else { imgX += cellW; }
     }
-    slide.addText(runs, {
-      x: MARGIN + 0.15, y: copyY + 0.08, w: CONTENT_W - 0.3, h: copyH - 0.16,
-      fontFace: FONT.body, valign: "top", shrinkText: true,
+    leftY += cellH * Math.ceil(imgCount / imgCols) + 0.15;
+  }
+
+  const metaLine = [
+    prodData.price || null,
+    prodData.rating ? `★ ${prodData.rating}` : null,
+  ].filter(Boolean).join("   |   ");
+  if (metaLine) {
+    slide.addText(metaLine, {
+      x: MARGIN, y: leftY, w: leftW, h: 0.35,
+      fontSize: 13, fontFace: FONT.body, color: COLOR.bodyText, bold: true,
+    });
+  }
+
+  addVerticalDivider(slide, rightX - 0.175, topY, availH);
+
+  // Right: description + USPs
+  let ry = topY;
+  if (prodData.description) {
+    addSectionLabel(slide, "Description", rightX, ry, rightW);
+    slide.addText(prodData.description, {
+      x: rightX, y: ry + 0.28, w: rightW, h: 1.1,
+      fontSize: 10, fontFace: FONT.body, color: COLOR.bodyText, valign: "top",
+    });
+    ry += 1.5;
+    addDivider(slide, rightX, ry, rightW);
+    ry += 0.15;
+  }
+
+  if (prodData.usps?.length) {
+    addSectionLabel(slide, "Key USPs", rightX, ry, rightW);
+    ry += 0.3;
+    prodData.usps.forEach((usp, i) => {
+      slide.addText([
+        { text: `${String(i + 1).padStart(2, "0")}.  `, options: { bold: true, fontSize: 13, color: COLOR.primary } },
+        { text: usp, options: { fontSize: 10, color: COLOR.bodyText } },
+      ], {
+        x: rightX, y: ry, w: rightW, h: 0.42,
+        fontFace: FONT.body, valign: "middle", shrinkText: true,
+      });
+      ry += 0.44;
     });
   }
 }
 
-// ── Shot List section ───────────────────────────────────────────────────────
+// ── Market Gap ───────────────────────────────────────────────────────────────
+function buildMarketGap(product) {
+  const research = product.research || {};
+  const keywords = research.keywords || [];
+  const gap = research.gap_analysis || {};
+  const slide = addContentSlide("Market Gap");
+  const topY = CONTENT_START_Y;
+  const availH = SLIDE_H - topY - 0.3;
+
+  // Keyword bar chart
+  const chartH = 2.2;
+  addSectionLabel(slide, "Top Keywords by Search Volume", MARGIN, topY, CONTENT_W);
+  if (keywords.length) {
+    addKeywordBarChart(slide, keywords, MARGIN, topY + 0.28, CONTENT_W, chartH - 0.28);
+  }
+  if (research.visual_implication) {
+    slide.addText(research.visual_implication, {
+      x: MARGIN, y: topY + chartH - 0.02, w: CONTENT_W, h: 0.32,
+      fontSize: 9, fontFace: FONT.body, color: COLOR.primary, italic: true,
+    });
+  }
+
+  // 3-column gap analysis
+  const colY = topY + chartH + 0.38;
+  const colH = availH - chartH - 0.38;
+  const colGap = 0.18;
+  const colW = (CONTENT_W - colGap * 2) / 3;
+  const col2X = MARGIN + colW + colGap;
+  const col3X = MARGIN + (colW + colGap) * 2;
+
+  const gapCols = [
+    { label: "Visual Patterns", items: gap.visual_patterns || [] },
+    { label: "Differentiation Opportunities", items: gap.differentiation_opportunities || [] },
+    { label: "Complaints to Address", items: gap.complaints_to_address || [] },
+  ];
+  gapCols.forEach(({ label, items }, i) => {
+    const cx = [MARGIN, col2X, col3X][i];
+    if (i > 0) addVerticalDivider(slide, cx - colGap / 2, colY, colH);
+    addSectionLabel(slide, label, cx, colY, colW);
+    items.slice(0, 5).forEach((item, j) => {
+      slide.addText([
+        { text: `${String(j + 1).padStart(2, "0")}.  `, options: { bold: true, fontSize: 10, color: COLOR.primary } },
+        { text: item, options: { fontSize: 9, color: COLOR.bodyText } },
+      ], {
+        x: cx, y: colY + 0.3 + j * 0.55, w: colW, h: 0.5,
+        fontFace: FONT.body, valign: "top", shrinkText: true,
+      });
+    });
+  });
+}
+
+// ── Creative Direction: Positioning & Key Messages ───────────────────────────
+function buildCreativePositioning(product) {
+  const creative = product.creative_direction || {};
+  if (!creative.positioning_statement && !creative.key_messages?.length) return;
+  const slide = addContentSlide("Creative Direction");
+  const topY = CONTENT_START_Y;
+
+  if (creative.positioning_statement) {
+    addAccentCallout(slide, "Positioning Statement", creative.positioning_statement, MARGIN, topY, CONTENT_W, 1.3);
+  }
+
+  if (creative.key_messages?.length) {
+    const msgsY = topY + (creative.positioning_statement ? 1.5 : 0);
+    addSectionLabel(slide, "Key Messages", MARGIN, msgsY, CONTENT_W);
+    creative.key_messages.forEach((msg, i) => {
+      const my = msgsY + 0.3 + i * 0.62;
+      slide.addText([
+        { text: `${String(i + 1).padStart(2, "0")}  `, options: { bold: true, fontSize: 20, color: COLOR.primary, fontFace: FONT.heading } },
+        { text: msg, options: { fontSize: 12, color: COLOR.bodyText, fontFace: FONT.body } },
+      ], {
+        x: MARGIN, y: my, w: CONTENT_W, h: 0.55,
+        valign: "middle", shrinkText: true,
+      });
+      addDivider(slide, MARGIN, my + 0.58, CONTENT_W, COLOR.midGray, 0.5);
+    });
+  }
+}
+
+// ── Creative Direction: Visual Direction ────────────────────────────────────
+function buildCreativeVisual(product) {
+  const creative = product.creative_direction || {};
+  const vd = creative.visual_direction;
+  if (!vd && !creative.competitive_differentiation) return;
+  const slide = addContentSlide("Visual Direction");
+  const topY = CONTENT_START_Y;
+
+  if (vd && typeof vd === "object") {
+    const vdRows = [
+      ["Color World", vd.color_world],
+      ["Lighting Signature", vd.lighting_signature],
+      ["Model Direction", vd.model_direction],
+      ["Prop Styling", vd.prop_styling],
+      ["Environment / Surface", vd.environment_surface_direction],
+      ["Mood", vd.mood],
+    ].filter(([, v]) => !!v);
+
+    const cols = 2;
+    const tileW = (CONTENT_W - 0.3) / cols;
+    const rows = Math.ceil(vdRows.length / cols);
+    const tileH = Math.min(1.4, (SLIDE_H - topY - 1.5) / rows);
+    const col2X = MARGIN + tileW + 0.3;
+
+    vdRows.forEach(([label, value], i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const tx = col === 0 ? MARGIN : col2X;
+      const ty = topY + row * (tileH + 0.1);
+      addTypographicTile(slide, label, value, tx, ty, tileW, tileH);
+    });
+  }
+
+  if (creative.competitive_differentiation) {
+    const boxY = SLIDE_H - 1.4;
+    addDivider(slide, MARGIN, boxY - 0.12, CONTENT_W, COLOR.midGray, 0.5);
+    addAccentCallout(slide, "Competitive Differentiation", creative.competitive_differentiation, MARGIN, boxY, CONTENT_W, 1.0);
+  }
+}
+
+// ── Competitor Landscape ─────────────────────────────────────────────────────
+function buildCompetitorLandscape(product) {
+  const competitors = product.research?.competitors || [];
+  if (!competitors.length) return;
+
+  const slide = addContentSlide("Competitor Landscape");
+  const AVAIL_H = SLIDE_H - CONTENT_START_Y - 0.15;
+  const cols = 3;
+  const colGap = 0.25;
+  const colW = (CONTENT_W - colGap * (cols - 1)) / cols;
+  const rowGap = 0.2;
+  const competitorsPerCol = Math.ceil(competitors.length / cols);
+  const cardH = (AVAIL_H - rowGap * (competitorsPerCol - 1)) / competitorsPerCol;
+
+  const imgPad = 0.1;
+  const imgCols = 4;
+  const imgRows = 2;
+  const imgCellSize = Math.min(
+    (colW - imgPad * 2 - 0.04 * (imgCols - 1)) / imgCols,
+    (cardH * 0.38 - 0.04 * (imgRows - 1)) / imgRows
+  );
+  const imgGridH = imgCellSize * imgRows + 0.04 * (imgRows - 1);
+
+  competitors.forEach((comp, ci) => {
+    const col = ci % cols;
+    const row = Math.floor(ci / cols);
+    const x = MARGIN + col * (colW + colGap);
+    const y = CONTENT_START_Y + row * (cardH + rowGap);
+
+    if (col > 0) addVerticalDivider(slide, x - colGap / 2, CONTENT_START_Y, AVAIL_H);
+    if (row > 0 && col === 0) addDivider(slide, MARGIN, y - rowGap / 2, CONTENT_W, COLOR.midGray, 0.5);
+
+    let innerY = y;
+
+    const nameLine = [
+      { text: comp.name || "Competitor", options: { fontSize: 12, bold: true, color: COLOR.primary, fontFace: FONT.heading } },
+    ];
+    if (comp.asin) {
+      nameLine.push({ text: "  |  ", options: { fontSize: 10, color: COLOR.darkGray } });
+      nameLine.push({
+        text: comp.asin,
+        options: {
+          fontSize: 10, color: COLOR.accent || COLOR.secondary,
+          hyperlink: { url: `https://www.amazon.com/dp/${comp.asin}`, tooltip: `View on Amazon: ${comp.asin}` },
+        },
+      });
+    }
+    slide.addText(nameLine, { x: x + imgPad, y: innerY, w: colW - imgPad * 2, h: 0.3, fontFace: FONT.heading });
+    innerY += 0.32;
+
+    const metrics = [comp.price, comp.rating ? `★ ${comp.rating}` : null].filter(Boolean).join("   |   ");
+    if (metrics) {
+      slide.addText(metrics, {
+        x: x + imgPad, y: innerY, w: colW - imgPad * 2, h: 0.22,
+        fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray,
+      });
+      innerY += 0.25;
+    }
+
+    if (comp.image_urls?.length) {
+      const maxImages = Math.min(comp.image_urls.length, imgRows * imgCols);
+      let imgX = x + imgPad;
+      let imgY = innerY;
+      let imgCol = 0;
+      for (let i = 0; i < maxImages; i++) {
+        const imgData = imageCache.get(comp.image_urls[i]);
+        if (imgData) {
+          slide.addImage({
+            data: imgData, x: imgX, y: imgY,
+            sizing: { type: "contain", w: imgCellSize, h: imgCellSize },
+          });
+        }
+        imgCol++;
+        if (imgCol >= imgCols) { imgCol = 0; imgY += imgCellSize + 0.04; imgX = x + imgPad; }
+        else { imgX += imgCellSize + 0.04; }
+      }
+      innerY += imgGridH + 0.1;
+    }
+
+    const kwInfo = [
+      comp.intersecting_keywords != null ? `${comp.intersecting_keywords} intersecting kw` : null,
+      comp.avg_position != null ? `avg pos ${comp.avg_position}` : null,
+    ].filter(Boolean).join("  ·  ");
+    if (kwInfo) {
+      slide.addText(kwInfo, {
+        x: x + imgPad, y: innerY, w: colW - imgPad * 2, h: 0.22,
+        fontSize: 8, fontFace: FONT.body, color: COLOR.darkGray,
+      });
+      innerY += 0.25;
+    }
+
+    let remainingH = cardH - (innerY - y) - 0.25;
+
+    if (comp.usps?.length) {
+      addSectionLabel(slide, "USPs", x + imgPad, innerY, colW - imgPad * 2);
+      const uspH = comp.complaints?.length ? remainingH * 0.55 : remainingH;
+      slide.addText(comp.usps.slice(0, 3).map((u) => `·  ${u}`).join("\n"), {
+        x: x + imgPad, y: innerY + 0.22, w: colW - imgPad * 2, h: Math.max(uspH - 0.22, 0.3),
+        fontSize: 8, fontFace: FONT.body, color: COLOR.bodyText, valign: "top", shrinkText: true,
+      });
+      innerY += uspH;
+    }
+
+    if (comp.complaints?.length) {
+      addSectionLabel(slide, "Complaints", x + imgPad, innerY, colW - imgPad * 2, COLOR.secondary);
+      const compH = cardH - (innerY - y) - 0.1;
+      slide.addText(comp.complaints.slice(0, 3).map((u) => `·  ${u}`).join("\n"), {
+        x: x + imgPad, y: innerY + 0.22, w: colW - imgPad * 2, h: Math.max(compH, 0.3),
+        fontSize: 8, fontFace: FONT.body, color: COLOR.bodyText, valign: "top", shrinkText: true,
+      });
+    }
+  });
+
+  // Competitor listing images (image-dominant slide)
+  const allImages = competitors
+    .filter((c) => c.image_urls?.length)
+    .map((c) => ({ name: c.name || c.asin || "Competitor", urls: c.image_urls }));
+
+  if (allImages.length) {
+    const imgSlide = addContentSlide("Competitor Listing Images");
+    const imgsPerRow = 8;
+    const imgW = CONTENT_W / imgsPerRow;
+    const imgH = imgW;
+    let iy = CONTENT_START_Y;
+    allImages.forEach((comp) => {
+      addSectionLabel(imgSlide, comp.name, MARGIN, iy, CONTENT_W);
+      iy += 0.26;
+      let ix = MARGIN;
+      comp.urls.slice(0, imgsPerRow).forEach((url) => {
+        const imgData = imageCache.get(url);
+        if (imgData) {
+          imgSlide.addImage({
+            data: imgData, x: ix, y: iy,
+            sizing: { type: "contain", w: imgW, h: imgH },
+          });
+        }
+        ix += imgW;
+      });
+      iy += imgH + 0.18;
+    });
+  }
+}
+
+// ── Main Image Overview (1 slide, all versions) ──────────────────────────────
+function buildMainImageOverview(versions) {
+  const slide = addContentSlide("Main Image — All Versions");
+  const n = versions.length;
+  const gap = 0.15;
+  const squareSize = (CONTENT_W - gap * (n - 1)) / n; // 1:1
+  const squareY = CONTENT_START_Y + 0.05;
+  const labelY = squareY + squareSize + 0.12;
+  const labelH = SLIDE_H - labelY - 0.35;
+
+  versions.forEach((v, i) => {
+    const x = MARGIN + i * (squareSize + gap);
+    
+    slide.addShape(pptx.shapes.RECTANGLE, {
+      x, y: squareY, w: squareSize, h: squareSize,
+      fill: { color: "F5F5F5" },
+      line: { color: "CCCCCC", width: 1 },
+    });
+
+    if (v.visual_concept) {
+      slide.addText(v.visual_concept, {
+        x: x + 0.1, y: squareY + 0.1, w: squareSize - 0.2, h: squareSize - 0.2,
+        fontSize: 7, fontFace: FONT.body, color: COLOR.darkGray,
+        align: "center", valign: "middle", shrinkText: true,
+      });
+    }
+
+    slide.addText(String(v.version_number || i + 1), {
+      x, y: labelY, w: squareSize, h: 0.42,
+      fontSize: 24, fontFace: FONT.heading, color: COLOR.primary,
+      bold: true, align: "center",
+    });
+    if (v.strategy_name) {
+      slide.addText(v.strategy_name, {
+        x, y: labelY + 0.44, w: squareSize, h: 0.3,
+        fontSize: 10, fontFace: FONT.heading, color: COLOR.bodyText,
+        bold: true, align: "center", shrinkText: true,
+      });
+    }
+    if (v.feature) {
+      slide.addText(v.feature.toUpperCase(), {
+        x, y: labelY + 0.76, w: squareSize, h: 0.2,
+        fontSize: 7, fontFace: FONT.body, color: COLOR.darkGray,
+        bold: true, charSpacing: 1.5, align: "center", shrinkText: true,
+      });
+    }
+    if (v.strategy && labelH > 1.1) {
+      slide.addText(v.strategy, {
+        x, y: labelY + 1.0, w: squareSize, h: labelH - 1.0,
+        fontSize: 8, fontFace: FONT.body, color: COLOR.darkGray,
+        align: "center", valign: "top", shrinkText: true,
+      });
+    }
+  });
+}
+
+// ── Listing Images Overview (1 slide, all slots) ─────────────────────────────
+function buildListingImagesOverview(listing) {
+  const slide = addContentSlide("Listing Images — Narrative Sequence");
+  const images = listing.images || [];
+  const n = images.length;
+  const gap = 0.1;
+  const squareSize = (CONTENT_W - gap * (n - 1)) / n; // 1:1
+
+  let contentY = CONTENT_START_Y;
+
+  // sequence_strategy as accent callout
+  if (listing.sequence_strategy) {
+    addAccentCallout(slide, null, listing.sequence_strategy, MARGIN, contentY, CONTENT_W, 0.7);
+    contentY += 0.85;
+  }
+
+  const squareY = contentY;
+  const labelY = squareY + squareSize + 0.1;
+  const roleColor = {
+    Opening: COLOR.darkGray,
+    Middle: COLOR.darkGray,
+    Closing: COLOR.darkGray,
+  };
+
+  images.forEach((img, i) => {
+    const x = MARGIN + i * (squareSize + gap);
+    
+    // 1:1 box
+    slide.addShape(pptx.shapes.RECTANGLE, {
+      x, y: squareY, w: squareSize, h: squareSize,
+      fill: { color: "F5F5F5" },
+      line: { color: "CCCCCC", width: 1 },
+    });
+
+    // Overlay structured copy inside the box
+    const copy = img.copy || {};
+    if (typeof img.copy === "string" && img.copy.trim()) {
+      // Backward compat: old plain-string copy
+      slide.addText(`"${img.copy}"`, {
+        x: x + 0.05, y: squareY + 0.05, w: squareSize - 0.1, h: squareSize - 0.1,
+        fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
+        italic: true, align: "center", valign: "middle", shrinkText: true,
+      });
+    } else if (typeof copy === "object") {
+      const pad = 0.08;
+      const innerW = squareSize - pad * 2;
+      let cy = squareY + pad;
+      const maxY = squareY + squareSize - pad;
+
+      if (copy.heading) {
+        const hH = 0.28;
+        slide.addText(copy.heading, {
+          x: x + pad, y: cy, w: innerW, h: hH,
+          fontSize: 9, fontFace: FONT.heading, color: COLOR.primary,
+          bold: true, align: "center", valign: "top", shrinkText: true,
+        });
+        cy += hH + 0.04;
+      }
+      if (copy.subheading) {
+        const sH = 0.22;
+        slide.addText(copy.subheading, {
+          x: x + pad, y: cy, w: innerW, h: sH,
+          fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
+          align: "center", valign: "top", shrinkText: true,
+        });
+        cy += sH + 0.04;
+      }
+      if (Array.isArray(copy.bullet_points) && copy.bullet_points.length) {
+        const bpText = copy.bullet_points.map((bp) => `·  ${bp}`).join("\n");
+        const bpH = Math.min(maxY - cy, copy.bullet_points.length * 0.15 + 0.05);
+        slide.addText(bpText, {
+          x: x + pad, y: cy, w: innerW, h: Math.max(bpH, 0.2),
+          fontSize: 6.5, fontFace: FONT.body, color: COLOR.darkGray,
+          align: "left", valign: "top", shrinkText: true,
+        });
+      }
+    }
+
+    slide.addText(String(img.slot_number || i + 1), {
+      x, y: labelY, w: squareSize, h: 0.36,
+      fontSize: 20, fontFace: FONT.heading, color: COLOR.primary,
+      bold: true, align: "center",
+    });
+    if (img.role_in_sequence) {
+      slide.addText(img.role_in_sequence.toUpperCase(), {
+        x, y: labelY + 0.37, w: squareSize, h: 0.2,
+        fontSize: 7, fontFace: FONT.body,
+        color: roleColor[img.role_in_sequence] || COLOR.darkGray,
+        bold: true, charSpacing: 1.5, align: "center", shrinkText: true,
+      });
+    }
+    if (img.image_type) {
+      slide.addText(img.image_type.replace("_", " ").toUpperCase(), {
+        x, y: labelY + 0.59, w: squareSize, h: 0.18,
+        fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
+        charSpacing: 1, align: "center", shrinkText: true,
+      });
+    }
+  });
+}
+
+// ── A+ Content (1 slide, vertically stacked composite) ───────────────────────
+function buildAplusContentSlide(modules) {
+  const slide = addContentSlide("A+ Content");
+  if (!modules?.length) return;
+
+  // All modules stacked vertically: Module 1 = 1464x1200, Modules 2-6 = 1464x600 each
+  // Total pixel height: 1200 + 5*600 = 4200
+  const TOTAL_PX_H = 4200;
+  const COMP_H = SLIDE_H - 0.9 - 0.35;
+  const COMP_W = COMP_H * (1464 / TOTAL_PX_H);
+  const compX = MARGIN;
+  const compY = 0.9;
+  const pxScale = COMP_H / TOTAL_PX_H;
+
+  const mHeights = [1200, 600, 600, 600, 600, 600];
+
+  let pxOffset = 0;
+  modules.forEach((mod, i) => {
+    if (!mod) return;
+    const mh = mHeights[i] ?? 600;
+    const rectY = compY + pxOffset * pxScale;
+    const rectH = mh * pxScale;
+    const rectX = compX;
+    const rectW = COMP_W;
+
+    slide.addShape(pptx.shapes.RECTANGLE, {
+      x: rectX, y: rectY, w: rectW, h: rectH,
+      fill: { color: i === 0 ? "EBEBEB" : "F5F5F5" },
+      line: { color: COLOR.accent || "CCCCCC", width: 0.75 },
+    });
+
+
+    // Render copy inside the module box
+    const copy = mod.copy || {};
+    const pad = 0.04;
+    const innerW = rectW - pad * 2;
+    let cy = rectY + pad;
+    const maxCY = rectY + rectH - pad;
+
+    // Backward compat: old-format copy with tagline/headline/body/icons
+    const heading = copy.heading || copy.tagline || copy.headline || null;
+    const subheading = copy.subheading || copy.description || copy.body || null;
+    const bullets = Array.isArray(copy.bullet_points) ? copy.bullet_points
+      : Array.isArray(copy.icons) ? copy.icons.map((ic) => `${ic.label || ""} — ${ic.description || ""}`) : null;
+
+    if (heading) {
+      const hH = Math.min(0.26, rectH * 0.25);
+      slide.addText(heading, {
+        x: rectX + pad, y: cy, w: innerW, h: hH,
+        fontSize: 8, fontFace: FONT.heading, color: COLOR.primary,
+        bold: true, align: "center", valign: "top", shrinkText: true,
+      });
+      cy += hH + 0.02;
+    }
+    if (subheading) {
+      const sH = Math.min(0.2, rectH * 0.2);
+      slide.addText(subheading, {
+        x: rectX + pad, y: cy, w: innerW, h: sH,
+        fontSize: 6, fontFace: FONT.body, color: COLOR.bodyText,
+        align: "center", valign: "top", shrinkText: true,
+      });
+      cy += sH + 0.02;
+    }
+    if (bullets && bullets.length) {
+      const bpText = bullets.map((bp) => `·  ${bp}`).join("\n");
+      const bpH = Math.max(maxCY - cy, 0.15);
+      slide.addText(bpText, {
+        x: rectX + pad, y: cy, w: innerW, h: bpH,
+        fontSize: 5.5, fontFace: FONT.body, color: COLOR.darkGray,
+        align: "left", valign: "top", shrinkText: true,
+      });
+    }
+
+    // Module number badge (bottom-right corner)
+    slide.addText(`${i + 1}`, {
+      x: rectX + rectW - 0.22, y: rectY + rectH - 0.18, w: 0.18, h: 0.14,
+      fontSize: 6, fontFace: FONT.body, color: COLOR.secondary || "BBBBBB",
+      align: "right", valign: "bottom", bold: true,
+    });
+
+    pxOffset += mh;
+  });
+
+  // Right annotations panel — one row per module, aligned to composite
+  const annX = compX + COMP_W + 0.4;
+  const annW = SLIDE_W - annX - MARGIN;
+
+  pxOffset = 0;
+  modules.forEach((mod, i) => {
+    if (!mod) return;
+    const mh = mHeights[i] ?? 600;
+    const rowY = compY + pxOffset * pxScale;
+    const rowH = mh * pxScale;
+    const pad = 0.06;
+
+    if (i > 0) addDivider(slide, annX, rowY, annW, COLOR.midGray, 0.5);
+
+    addSectionLabel(slide, (mod.module_role || "").replace(/_/g, " "), annX, rowY + pad, annW, COLOR.primary);
+
+    // Strategy text as annotation
+    if (mod.strategy) {
+      slide.addText(mod.strategy, {
+        x: annX, y: rowY + pad + 0.22, w: annW, h: rowH - pad * 2 - 0.22,
+        fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
+        valign: "top", shrinkText: true,
+      });
+    }
+
+    pxOffset += mh;
+  });
+}
+
+// ── Shot List ─────────────────────────────────────────────────────────────────
 function buildShotListSection(shotList) {
   const shotsByType = shotList.shots_by_type || {};
   const typeKeys = Object.keys(shotsByType).filter((k) => Array.isArray(shotsByType[k]) && shotsByType[k].length);
@@ -1534,7 +1032,7 @@ function buildShotListSection(shotList) {
 
   addSectionSlide("Shot List", `${typeKeys.length} shot type${typeKeys.length === 1 ? "" : "s"}`);
 
-  // Visual DNA overview slide
+  // Visual DNA — 2×3 typographic tile grid
   const vd = shotList.visual_dna || {};
   const dnaRows = [
     ["Color World", vd.color_world],
@@ -1544,143 +1042,107 @@ function buildShotListSection(shotList) {
     ["Environment / Surface", vd.environment_surface_direction],
     ["Mood", vd.mood],
   ].filter(([, v]) => !!v);
+
   if (dnaRows.length) {
-    const slide = addContentSlide("Visual DNA");
-    const cardY = CONTENT_START_Y;
-    const cardH = SLIDE_H - cardY - 0.35;
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: MARGIN, y: cardY, w: CONTENT_W, h: cardH,
-      rectRadius: 0.1, fill: { color: COLOR.lightGray },
-      line: { color: COLOR.midGray, width: 0.5 },
-    });
-    const rowH = cardH / dnaRows.length;
+    const dnaSlide = addContentSlide("Visual DNA");
+    const tileW = (CONTENT_W - 0.3) / 2;
+    const rows = Math.ceil(dnaRows.length / 2);
+    const tileH = Math.min(1.4, (SLIDE_H - CONTENT_START_Y - 0.35) / rows);
+    const col2X = MARGIN + tileW + 0.3;
     dnaRows.forEach(([label, value], i) => {
-      const ry = cardY + i * rowH;
-      if (i > 0) {
-        slide.addShape(pptx.shapes.LINE, {
-          x: MARGIN + 0.15, y: ry, w: CONTENT_W - 0.3, h: 0,
-          line: { color: COLOR.midGray, width: 0.5 },
-        });
-      }
-      slide.addText([
-        { text: `${label.toUpperCase()}  `, options: { bold: true, fontSize: 8, color: COLOR.darkGray, charSpacing: 1.5 } },
-        { text: value, options: { fontSize: 10, color: COLOR.bodyText } },
-      ], {
-        x: MARGIN + 0.2, y: ry + 0.08, w: CONTENT_W - 0.4, h: rowH - 0.16,
-        fontFace: FONT.body, valign: "top", shrinkText: true,
-      });
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const tx = col === 0 ? MARGIN : col2X;
+      const ty = CONTENT_START_Y + row * (tileH + 0.1);
+      addTypographicTile(dnaSlide, label, value, tx, ty, tileW, tileH);
     });
   }
 
-  for (const key of typeKeys) {
-    buildShotTypeSlide(key, shotsByType[key]);
-  }
+  buildAllShotTypesSlides(shotsByType, typeKeys);
 }
 
-function buildShotTypeSlide(typeKey, options) {
-  const pretty = typeKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const slide = addContentSlide(`Shot Type — ${pretty}`);
-  slide.addText(`${options.length} option${options.length === 1 ? "" : "s"}`, {
-    x: MARGIN, y: 1.08, w: CONTENT_W, h: 0.3,
-    fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray, italic: true,
-  });
+function buildAllShotTypesSlides(shotsByType, typeKeys) {
+  const AVAIL_H = SLIDE_H - CONTENT_START_Y - 0.35;
+  const OPTION_H = 0.56;
+  const TYPE_H = 0.38;
+  const INDENT = 0.22;
 
-  const topY = CONTENT_START_Y + 0.1;
-  const availH = SLIDE_H - topY - 0.35;
-  const cardGap = 0.15;
-  const maxCards = Math.min(options.length, 3);
-  const cardH = (availH - cardGap * (maxCards - 1)) / maxCards;
+  let slide = null;
+  let currentY = CONTENT_START_Y;
 
-  options.slice(0, 3).forEach((opt, i) => {
-    const cy = topY + i * (cardH + cardGap);
-    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: MARGIN, y: cy, w: CONTENT_W, h: cardH,
-      rectRadius: 0.08, fill: { color: COLOR.lightGray },
-      line: { color: COLOR.midGray, width: 0.5 },
+  const ensureSlide = (title) => {
+    if (!slide) {
+      slide = addContentSlide(title || "Shot List");
+      currentY = CONTENT_START_Y;
+    }
+  };
+
+  const nextSlide = () => {
+    slide = addContentSlide("Shot List (continued)");
+    currentY = CONTENT_START_Y;
+  };
+
+  for (const key of typeKeys) {
+    const options = shotsByType[key] || [];
+    const blockH = TYPE_H + options.length * OPTION_H;
+
+    ensureSlide("Shot List");
+
+    // Start fresh slide if this type block won't fit and we're not at the top
+    if (currentY + blockH > CONTENT_START_Y + AVAIL_H && currentY > CONTENT_START_Y) {
+      nextSlide();
+    }
+
+    // Type header
+    const typePretty = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    if (currentY > CONTENT_START_Y) {
+      addDivider(slide, MARGIN, currentY, CONTENT_W, COLOR.midGray, 0.5);
+      currentY += 0.1;
+    }
+    slide.addText(typePretty, {
+      x: MARGIN, y: currentY, w: CONTENT_W * 0.65, h: 0.28,
+      fontSize: 12, fontFace: FONT.heading, color: COLOR.primary, bold: true,
     });
-
-    // Header line: option_id + aspect ratio + resolution
-    const headerBits = [
-      opt.option_id || `option_${i + 1}`,
-      opt.aspect_ratio ? `AR ${opt.aspect_ratio}` : null,
-      opt.resolution ? opt.resolution : null,
-      opt.color_temperature ? opt.color_temperature : null,
-    ].filter(Boolean).join("   |   ");
-
-    slide.addText(headerBits, {
-      x: MARGIN + 0.15, y: cy + 0.08, w: CONTENT_W - 0.3, h: 0.3,
-      fontSize: 10, fontFace: FONT.heading, color: COLOR.primary, bold: true,
+    slide.addText(`${options.length} option${options.length === 1 ? "" : "s"}`, {
+      x: MARGIN + CONTENT_W * 0.65, y: currentY, w: CONTENT_W * 0.35, h: 0.28,
+      fontSize: 8, fontFace: FONT.body, color: COLOR.darkGray,
+      bold: true, charSpacing: 2, align: "right",
     });
+    currentY += TYPE_H;
 
-    // Meta row: lighting / shadows / surface
-    const metaLine = [
-      opt.lighting ? `Lighting: ${opt.lighting}` : null,
-      opt.shadows ? `Shadows: ${opt.shadows}` : null,
-      opt.surface_material ? `Surface: ${opt.surface_material}` : null,
-      opt.camera ? `Camera: ${opt.camera}` : null,
-    ].filter(Boolean).join("   •   ");
-    if (metaLine) {
-      slide.addText(metaLine, {
-        x: MARGIN + 0.15, y: cy + 0.36, w: CONTENT_W - 0.3, h: 0.3,
-        fontSize: 8, fontFace: FONT.body, color: COLOR.darkGray, valign: "top", shrinkText: true,
-      });
-    }
+    for (const opt of options) {
+      if (currentY + OPTION_H > CONTENT_START_Y + AVAIL_H) {
+        nextSlide();
+        slide.addText(`${typePretty} (cont.)`, {
+          x: MARGIN, y: currentY, w: CONTENT_W, h: 0.28,
+          fontSize: 10, fontFace: FONT.heading, color: COLOR.primary, bold: true, italic: true,
+        });
+        currentY += 0.32;
+      }
 
-    // Prompt body
-    if (opt.prompt) {
-      const promptY = cy + 0.66;
-      const promptH = cardH - 0.66 - 0.4;
-      slide.addText(opt.prompt, {
-        x: MARGIN + 0.15, y: promptY, w: CONTENT_W - 0.3, h: promptH,
-        fontSize: 8, fontFace: FONT.body, color: COLOR.bodyText, valign: "top", shrinkText: true,
-      });
-    }
-
-    // Fits deliverables badges along bottom
-    if (Array.isArray(opt.fits_deliverables) && opt.fits_deliverables.length) {
-      const badgeY = cy + cardH - 0.35;
-      const text = "Fits: " + opt.fits_deliverables.join(", ");
-      slide.addText(text, {
-        x: MARGIN + 0.15, y: badgeY, w: CONTENT_W - 0.3, h: 0.25,
-        fontSize: 8, fontFace: FONT.body, color: COLOR.accent || COLOR.secondary, bold: true, italic: true,
-      });
-    }
-  });
-
-  if (options.length > 3) {
-    const moreSlide = addContentSlide(`Shot Type — ${pretty} (continued)`);
-    const more = options.slice(3);
-    const moreMax = Math.min(more.length, 3);
-    const moreH = (availH - cardGap * (moreMax - 1)) / moreMax;
-    more.slice(0, 3).forEach((opt, i) => {
-      const cy = topY + i * (moreH + cardGap);
-      moreSlide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-        x: MARGIN, y: cy, w: CONTENT_W, h: moreH,
-        rectRadius: 0.08, fill: { color: COLOR.lightGray },
-        line: { color: COLOR.midGray, width: 0.5 },
-      });
-      const headerBits = [
-        opt.option_id || `option_${i + 4}`,
+      // Line 1: option_id · AR · lighting
+      const metaBits = [
+        opt.option_id || "",
         opt.aspect_ratio ? `AR ${opt.aspect_ratio}` : null,
-        opt.resolution ? opt.resolution : null,
-      ].filter(Boolean).join("   |   ");
-      moreSlide.addText(headerBits, {
-        x: MARGIN + 0.15, y: cy + 0.08, w: CONTENT_W - 0.3, h: 0.3,
-        fontSize: 10, fontFace: FONT.heading, color: COLOR.primary, bold: true,
+        opt.lighting ? opt.lighting : null,
+      ].filter(Boolean).join("  ·  ");
+
+      slide.addText(metaBits, {
+        x: MARGIN + INDENT, y: currentY, w: CONTENT_W - INDENT, h: 0.22,
+        fontSize: 9, fontFace: FONT.body, color: COLOR.darkGray, shrinkText: true,
       });
+
+      // Line 2: prompt
       if (opt.prompt) {
-        moreSlide.addText(opt.prompt, {
-          x: MARGIN + 0.15, y: cy + 0.45, w: CONTENT_W - 0.3, h: moreH - 0.75,
-          fontSize: 8, fontFace: FONT.body, color: COLOR.bodyText, valign: "top", shrinkText: true,
+        slide.addText(opt.prompt, {
+          x: MARGIN + INDENT, y: currentY + 0.22, w: CONTENT_W - INDENT, h: 0.28,
+          fontSize: 8, fontFace: FONT.body, color: COLOR.bodyText,
+          valign: "top", shrinkText: true,
         });
       }
-      if (Array.isArray(opt.fits_deliverables) && opt.fits_deliverables.length) {
-        moreSlide.addText("Fits: " + opt.fits_deliverables.join(", "), {
-          x: MARGIN + 0.15, y: cy + moreH - 0.35, w: CONTENT_W - 0.3, h: 0.25,
-          fontSize: 8, fontFace: FONT.body, color: COLOR.accent || COLOR.secondary, bold: true, italic: true,
-        });
-      }
-    });
+
+      currentY += OPTION_H;
+    }
   }
 }
 
@@ -1689,17 +1151,12 @@ function buildShotTypeSlide(typeKey, options) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 (async () => {
-  // Pre-download all images as base64 before building slides
   imageCache = await prefetchAllImages(brief);
 
   buildCover();
   buildBrandGuidelines();
+  (brief.products || []).forEach((product, i) => buildProduct(product, i));
 
-  (brief.products || []).forEach((product, i) => {
-    buildProduct(product, i);
-  });
-
-  // ── Write file ────────────────────────────────────────────────────────────
   const outputPath = resolve(OUTPUT);
   try {
     await pptx.writeFile({ fileName: outputPath });
