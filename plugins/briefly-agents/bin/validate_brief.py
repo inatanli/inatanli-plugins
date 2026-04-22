@@ -173,52 +173,43 @@ def _check_aplus(prefix, aplus, errors):
             })
 
         if number == 1:
-            if not copy_obj.get("tagline"):
-                errors.append({"path": f"{mod_prefix}.copy.tagline", "message": "Module 1 must set copy.tagline"})
-            elif _word_count(copy_obj["tagline"]) > 6:
+            if not copy_obj.get("heading"):
+                errors.append({"path": f"{mod_prefix}.copy.heading", "message": "Module 1 must set copy.heading (was tagline)"})
+            elif _word_count(copy_obj["heading"]) > 6:
                 errors.append({
-                    "path": f"{mod_prefix}.copy.tagline",
-                    "message": f"Module 1 copy.tagline exceeds 6-word cap (got {_word_count(copy_obj['tagline'])} words)",
+                    "path": f"{mod_prefix}.copy.heading",
+                    "message": f"Module 1 copy.heading exceeds 6-word cap (got {_word_count(copy_obj['heading'])} words)",
                 })
-            if not copy_obj.get("product_name"):
-                errors.append({"path": f"{mod_prefix}.copy.product_name", "message": "Module 1 must set copy.product_name"})
-            desc = copy_obj.get("description") or ""
-            desc_words = _word_count(desc)
-            if not desc:
-                errors.append({"path": f"{mod_prefix}.copy.description", "message": "Module 1 must set copy.description"})
-            elif not (18 <= desc_words <= 22):
-                errors.append({
-                    "path": f"{mod_prefix}.copy.description",
-                    "message": f"Module 1 copy.description must be 18-22 words (got {desc_words})",
-                })
-            icons = copy_obj.get("icons") or []
-            if len(icons) != 3:
-                errors.append({"path": f"{mod_prefix}.copy.icons", "message": f"Module 1 must have exactly 3 icons, got {len(icons)}"})
-            for i_idx, icon in enumerate(icons):
-                label = icon.get("label") or ""
-                if _word_count(label) > 3:
+            if not copy_obj.get("subheading"):
+                errors.append({"path": f"{mod_prefix}.copy.subheading", "message": "Module 1 must set copy.subheading (containing product name + description)"})
+            
+            bullets = copy_obj.get("bullet_points") or []
+            if len(bullets) != 3:
+                errors.append({"path": f"{mod_prefix}.copy.bullet_points", "message": f"Module 1 must have exactly 3 bullet_points (icons), got {len(bullets)}"})
+            for b_idx, bullet in enumerate(bullets):
+                if _word_count(bullet) > 4:
                     errors.append({
-                        "path": f"{mod_prefix}.copy.icons[{i_idx}].label",
-                        "message": f"Icon label '{label}' exceeds 3-word cap",
+                        "path": f"{mod_prefix}.copy.bullet_points[{b_idx}]",
+                        "message": f"Icon label '{bullet}' exceeds 4-word cap",
                     })
         else:
-            if not copy_obj.get("headline"):
-                errors.append({"path": f"{mod_prefix}.copy.headline", "message": f"Module {number} must set copy.headline"})
-            if not copy_obj.get("body"):
-                errors.append({"path": f"{mod_prefix}.copy.body", "message": f"Module {number} must set copy.body"})
+            if not copy_obj.get("heading"):
+                errors.append({"path": f"{mod_prefix}.copy.heading", "message": f"Module {number} must set copy.heading"})
+            if not copy_obj.get("subheading"):
+                errors.append({"path": f"{mod_prefix}.copy.subheading", "message": f"Module {number} must set copy.subheading"})
             if number == 6:
-                headline = copy_obj.get("headline") or ""
-                body = copy_obj.get("body") or ""
-                if len(headline) > 36:
+                heading = copy_obj.get("heading") or ""
+                subheading = copy_obj.get("subheading") or ""
+                if len(heading) > 36:
                     errors.append({
-                        "path": f"{mod_prefix}.copy.headline",
-                        "message": f"Module 6 copy.headline exceeds 36-char cap (got {len(headline)})",
+                        "path": f"{mod_prefix}.copy.heading",
+                        "message": f"Module 6 copy.heading exceeds 36-char cap (got {len(heading)})",
                     })
-                body_words = _word_count(body)
-                if body_words > 50:
+                sub_words = _word_count(subheading)
+                if sub_words > 25:
                     errors.append({
-                        "path": f"{mod_prefix}.copy.body",
-                        "message": f"Module 6 copy.body exceeds 50-word cap (got {body_words})",
+                        "path": f"{mod_prefix}.copy.subheading",
+                        "message": f"Module 6 copy.subheading exceeds 25-word cap (got {sub_words})",
                     })
 
 
@@ -316,8 +307,8 @@ def _check_word_caps(brief, errors):
         main_image = deliverables.get("main_image") or []
         for j, version in enumerate(main_image):
             strategy = version.get("strategy")
-            if strategy and _word_count(strategy) > 40:
-                errors.append({"path": f"{prefix}.deliverables.main_image[{j}].strategy", "message": f"Main image strategy exceeds 40-word cap (got {_word_count(strategy)})"})
+            if strategy and _word_count(strategy) > 50:
+                errors.append({"path": f"{prefix}.deliverables.main_image[{j}].strategy", "message": f"Main image strategy exceeds 50-word cap (got {_word_count(strategy)})"})
                 
         listing_images = deliverables.get("listing_images") or {}
         seq_strategy = listing_images.get("sequence_strategy")
@@ -326,20 +317,19 @@ def _check_word_caps(brief, errors):
             
         for j, img in enumerate(listing_images.get("images") or []):
             strategy = img.get("strategy")
-            if strategy and _word_count(strategy) > 40:
-                errors.append({"path": f"{prefix}.deliverables.listing_images.images[{j}].strategy", "message": f"Listing image strategy exceeds 40-word cap (got {_word_count(strategy)})"})
+            if strategy and _word_count(strategy) > 50:
+                errors.append({"path": f"{prefix}.deliverables.listing_images.images[{j}].strategy", "message": f"Listing image strategy exceeds 50-word cap (got {_word_count(strategy)})"})
 
         aplus = deliverables.get("aplus") or {}
         for j, mod in enumerate(aplus.get("modules") or []):
             strategy = mod.get("strategy")
-            if strategy and _word_count(strategy) > 40:
-                errors.append({"path": f"{prefix}.deliverables.aplus.modules[{j}].strategy", "message": f"A+ module strategy exceeds 40-word cap (got {_word_count(strategy)})"})
-            
+            if strategy and _word_count(strategy) > 50:
+                errors.append({"path": f"{prefix}.deliverables.aplus.modules[{j}].strategy", "message": f"A+ module strategy exceeds 50-word cap (got {_word_count(strategy)})"})
             num = mod.get("module_number")
             if num in [2, 3, 4, 5]:
-                body = (mod.get("copy") or {}).get("body")
-                if body and _word_count(body) > 60:
-                    errors.append({"path": f"{prefix}.deliverables.aplus.modules[{j}].copy.body", "message": f"A+ module {num} copy.body exceeds 60-word cap (got {_word_count(body)})"})
+                subheading = (mod.get("copy") or {}).get("subheading")
+                if subheading and _word_count(subheading) > 45:
+                    errors.append({"path": f"{prefix}.deliverables.aplus.modules[{j}].copy.subheading", "message": f"A+ module {num} copy.subheading exceeds 45-word cap (got {_word_count(subheading)})"})
 
 
 def _check_phase_scope(brief, phase, errors):
