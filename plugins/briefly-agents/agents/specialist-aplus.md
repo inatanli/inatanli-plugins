@@ -86,3 +86,20 @@ Return a JSON object. This populates `products[n].deliverables.aplus`.
 
 ### Forbidden fields
 Do **not** emit `prompt`, `interaction_points`, `hotspots`, `deliverable_type`, `tagline`, `product_name`, `description`, `icons`, `headline`, or `body`. A+ modules use the unified `copy` block.
+
+### Example (quality bar)
+
+<example>
+{
+  "module_number": 2,
+  "module_role": "expand_or_deepen",
+  "dimensions": "1464x600",
+  "visual_concept": "Cutaway render of the bottle's dual chamber, rotated slightly to show the membrane between actives and carrier. Brand primary pulled into the liquid tints; neutral studio backdrop matches the visual DNA's cool-editorial mood. Callouts sit quietly to the left so copy has breathing room.",
+  "copy": {
+    "heading": "Two chambers keep actives alive",
+    "subheading": "Most vitamin C serums oxidize within weeks of opening. Our dual-chamber membrane keeps the actives sealed until first press — so the dose you apply on day thirty is as potent as day one.",
+    "bullet_points": null
+  },
+  "strategy": "Deepens the freshness promise from listing slot 3 by explaining the mechanism, not re-stating it. Main image covers the hero reveal; this module owns the technical proof the listing only gestures at."
+}
+</example>
