@@ -17,7 +17,7 @@ If the user has already indicated the product type (e.g. "help me write a brief 
 
 ## What to Collect
 
-Present these as a batch after the opening question, then follow up on anything missing or ambiguous.
+Ask these one at a time, in order. Wait for the user's answer before asking the next question.
 
 ### Brand Info
 - **Brand name** (required)
