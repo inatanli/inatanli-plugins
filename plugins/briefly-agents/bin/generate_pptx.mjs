@@ -195,20 +195,22 @@ function addKeywordBarChart(slide, keywords, x, y, w, h) {
   const labels = top.map((k) => k.keyword || "");
   const values = top.map((k) => Number(k.average_monthly_search_volume) || 0);
 
-  slide.addChart(pptx.charts.BAR, [{ name: "Avg. Monthly Searches", labels, values }], {
+  slide.addChart(pptx.ChartType.bar, [{ name: "Avg. Monthly Searches", labels, values }], {
     x, y, w, h,
     barDir: "bar",
     chartColors: [COLOR.primary],
     showLegend: false,
+    showLabel: true,
     showTitle: false,
     showValue: true,
     dataLabelFontSize: 8,
-    catAxisLabelFontSize: 8,
+    catAxisLabelFontSize: 9,
+    catAxisLabelFontFace: FONT.body,
     valAxisLabelFontSize: 8,
     catAxisLineShow: false,
     valAxisLineShow: false,
-    catAxisLabelPos: "low",
-    catAxisOrientation: "maxMin", // Ensures the highest volume (first in array) is at the top
+    catAxisOrientation: "maxMin",
+    valGridLine: { style: "none" },
   });
 }
 
@@ -488,11 +490,11 @@ function buildProductSnapshot(product) {
   if (prodData.complaints?.length) {
     addDivider(slide, rightX, ry, rightW);
     ry += 0.15;
-    addSectionLabel(slide, "Top Complaints", rightX, ry, rightW, COLOR.secondary);
+    addSectionLabel(slide, "Top Complaints", rightX, ry, rightW, COLOR.primary);
     ry += 0.3;
     prodData.complaints.slice(0, 3).forEach((complaint, i) => {
       slide.addText([
-        { text: `·  `, options: { bold: true, fontSize: 12, color: COLOR.secondary } },
+        { text: `·  `, options: { bold: true, fontSize: 12, color: COLOR.primary } },
         { text: complaint, options: { fontSize: 9.5, color: COLOR.bodyText } },
       ], {
         x: rightX, y: ry, w: rightW, h: 0.4,
@@ -513,15 +515,14 @@ function buildMarketGap(product) {
   const availH = SLIDE_H - topY - 0.3;
 
   // Keyword bar chart
-  const chartH = 2.2;
-  addSectionLabel(slide, "Top Keywords by Search Volume", MARGIN, topY, CONTENT_W);
+  const chartH = 1.9;
+  addSectionLabel(slide, "Top Keywords by Average Monthly Searches", MARGIN, topY, CONTENT_W);
   if (keywords.length) {
     addKeywordBarChart(slide, keywords, MARGIN, topY + 0.28, CONTENT_W, chartH - 0.28);
   }
 
   // 3-column gap analysis
   const colY = topY + chartH + 0.28;
-  const colH = 2.0;
   const colGap = 0.18;
   const colW = (CONTENT_W - colGap * 2) / 3;
   const col2X = MARGIN + colW + colGap;
@@ -532,16 +533,17 @@ function buildMarketGap(product) {
     { label: "Differentiation Opportunities", items: gap.differentiation_opportunities || [] },
     { label: "Complaints to Address", items: gap.complaints_to_address || [] },
   ];
+  const colDivH = 0.3 + Math.min(Math.max(...gapCols.map(c => c.items.length), 0), 5) * 0.48;
   gapCols.forEach(({ label, items }, i) => {
     const cx = [MARGIN, col2X, col3X][i];
-    if (i > 0) addVerticalDivider(slide, cx - colGap / 2, colY, colH);
+    if (i > 0) addVerticalDivider(slide, cx - colGap / 2, colY, colDivH);
     addSectionLabel(slide, label, cx, colY, colW);
     items.slice(0, 5).forEach((item, j) => {
       slide.addText([
         { text: `${String(j + 1).padStart(2, "0")}.  `, options: { bold: true, fontSize: 10, color: COLOR.primary } },
         { text: item, options: { fontSize: 9, color: COLOR.bodyText } },
       ], {
-        x: cx, y: colY + 0.3 + j * 0.55, w: colW, h: 0.5,
+        x: cx, y: colY + 0.3 + j * 0.48, w: colW, h: 0.48,
         fontFace: FONT.body, valign: "top", shrinkText: true,
       });
     });
@@ -549,10 +551,11 @@ function buildMarketGap(product) {
 
   // Visual implication as a strategic callout below columns
   if (research.visual_implication) {
-    const implY = colY + colH + 0.3;
+    const maxItems = Math.max(...gapCols.map(c => Math.min(c.items.length, 5)), 0);
+    const implY = colY + 0.3 + maxItems * 0.48 + 0.15;
     slide.addText(research.visual_implication, {
-      x: MARGIN, y: implY, w: CONTENT_W, h: 0.6,
-      fontSize: 10, fontFace: FONT.body, color: COLOR.primary, italic: true,
+      x: MARGIN, y: implY, w: CONTENT_W, h: 0.45,
+      fontSize: 9, fontFace: FONT.body, color: COLOR.primary, italic: true,
       valign: "top", shrinkText: true,
     });
   }
@@ -718,8 +721,8 @@ function buildCompetitorLandscape(product) {
     }
 
     const kwInfo = [
-      comp.intersecting_keywords != null ? `${comp.intersecting_keywords} intersecting kw` : null,
-      comp.avg_position != null ? `avg pos ${comp.avg_position}` : null,
+      comp.intersecting_keywords != null ? `${comp.intersecting_keywords} intersecting keywords` : null,
+      comp.avg_position != null ? `avg position ${comp.avg_position}` : null,
     ].filter(Boolean).join("  ·  ");
     if (kwInfo) {
       slide.addText(kwInfo, {
@@ -891,42 +894,50 @@ function buildListingImagesOverview(listing) {
       const maxY = squareY + squareSize - pad;
 
       if (copy.heading) {
-        const hH = 0.36;
+        const hH = 0.30;
         slide.addText(copy.heading, {
           x: x + pad, y: cy, w: innerW, h: hH,
-          fontSize: 9, fontFace: FONT.heading, color: COLOR.primary,
+          fontSize: 7, fontFace: FONT.heading, color: COLOR.primary,
           bold: true, align: "center", valign: "top", shrinkText: true,
         });
         cy += hH + 0.02;
       }
       if (copy.subheading) {
-        const sH = 0.26;
+        const sH = 0.22;
         slide.addText(copy.subheading, {
           x: x + pad, y: cy, w: innerW, h: sH,
-          fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
+          fontSize: 6, fontFace: FONT.body, color: COLOR.bodyText,
           align: "center", valign: "top", shrinkText: true,
         });
-        cy += sH + 0.02;
+        cy += sH + 0.38;
       }
       if (Array.isArray(copy.bullet_points) && copy.bullet_points.length) {
         const bpText = copy.bullet_points.map((bp) => `·  ${bp}`).join("\n");
         const bpH = Math.min(maxY - cy, copy.bullet_points.length * 0.15 + 0.05);
         slide.addText(bpText, {
           x: x + pad, y: cy, w: innerW, h: Math.max(bpH, 0.2),
-          fontSize: 6.5, fontFace: FONT.body, color: COLOR.darkGray,
+          fontSize: 5.5, fontFace: FONT.body, color: COLOR.darkGray,
           align: "left", valign: "top", shrinkText: true,
         });
       }
     }
 
+    // Fixed label zones — increased spacing to prevent overlap
+    const z0 = labelY;          // slot number
+    const z1 = z0 + 0.32;      // role_in_sequence (+0.04 gap after large slot number)
+    const z2 = z1 + 0.17;      // image_type (+0.01 breathing room)
+    const z3 = z2 + 0.17;      // strategy (+0.01 breathing room)
+    const z4 = z3 + 1.15;      // visual_concept (moved down 0.5" further to clear strategy)
+    const zEnd = SLIDE_H - 0.05; // reclaim 0.10" at the very bottom
+
     slide.addText(String(img.slot_number || i + 1), {
-      x, y: labelY, w: squareSize, h: 0.36,
+      x, y: z0, w: squareSize, h: 0.26,
       fontSize: 20, fontFace: FONT.heading, color: COLOR.primary,
       bold: true, align: "center",
     });
     if (img.role_in_sequence) {
       slide.addText(img.role_in_sequence.toUpperCase(), {
-        x, y: labelY + 0.37, w: squareSize, h: 0.2,
+        x, y: z1, w: squareSize, h: 0.15,
         fontSize: 7, fontFace: FONT.body,
         color: roleColor[img.role_in_sequence] || COLOR.darkGray,
         bold: true, charSpacing: 1.5, align: "center", shrinkText: true,
@@ -934,22 +945,21 @@ function buildListingImagesOverview(listing) {
     }
     if (img.image_type) {
       slide.addText(img.image_type.replace("_", " ").toUpperCase(), {
-        x, y: labelY + 0.59, w: squareSize, h: 0.18,
+        x, y: z2, w: squareSize, h: 0.15,
         fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
         charSpacing: 1, align: "center", shrinkText: true,
       });
     }
     if (img.strategy) {
       slide.addText(img.strategy, {
-        x, y: labelY + 0.80, w: squareSize, h: 0.35,
+        x, y: z3, w: squareSize, h: 1.10,
         fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
         align: "center", valign: "top", shrinkText: true,
       });
     }
     if (img.visual_concept) {
-      const vcY = img.strategy ? labelY + 1.18 : labelY + 0.80;
       slide.addText(img.visual_concept, {
-        x, y: vcY, w: squareSize, h: 0.35,
+        x, y: z4, w: squareSize, h: Math.max(zEnd - z4, 0.2),
         fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
         italic: true, align: "center", valign: "top", shrinkText: true,
       });
@@ -999,8 +1009,6 @@ function buildAplusContentSlide(modules) {
     // Backward compat: old-format copy with tagline/headline/body/icons
     const heading = copy.heading || copy.tagline || copy.headline || null;
     const subheading = copy.subheading || copy.description || copy.body || null;
-    const bullets = Array.isArray(copy.bullet_points) ? copy.bullet_points
-      : Array.isArray(copy.icons) ? copy.icons.map((ic) => `${ic.label || ""} — ${ic.description || ""}`) : null;
 
     if (heading) {
       const hH = Math.min(0.26, rectH * 0.25);
@@ -1012,21 +1020,11 @@ function buildAplusContentSlide(modules) {
       cy += hH + 0.02;
     }
     if (subheading) {
-      const sH = Math.min(0.2, rectH * 0.2);
+      const sH = Math.max(maxCY - cy, 0.1);
       slide.addText(subheading, {
         x: rectX + pad, y: cy, w: innerW, h: sH,
-        fontSize: 6, fontFace: FONT.body, color: COLOR.bodyText,
+        fontSize: 5.5, fontFace: FONT.body, color: COLOR.bodyText,
         align: "center", valign: "top", shrinkText: true,
-      });
-      cy += sH + 0.02;
-    }
-    if (bullets && bullets.length) {
-      const bpText = bullets.map((bp) => `·  ${bp}`).join("\n");
-      const bpH = Math.max(maxCY - cy, 0.15);
-      slide.addText(bpText, {
-        x: rectX + pad, y: cy, w: innerW, h: bpH,
-        fontSize: 5.5, fontFace: FONT.body, color: COLOR.darkGray,
-        align: "left", valign: "top", shrinkText: true,
       });
     }
 
@@ -1059,39 +1057,36 @@ function buildAplusContentSlide(modules) {
     let annotY = rowY + pad + 0.22;
     const annotBottom = rowY + rowH - pad;
 
-    if (mod.strategy) {
-      const stratH = mod.visual_concept
-        ? Math.min(0.38, (annotBottom - annotY) * 0.5)
-        : Math.max(annotBottom - annotY, 0.1);
-      slide.addText("Strategy", {
-        x: annX, y: annotY, w: annW, h: 0.14,
-        fontSize: 6, fontFace: FONT.body, color: COLOR.bodyText,
-        bold: true, valign: "top",
-      });
+    const BETWEEN_GAP = 0.06;
+    const available = annotBottom - annotY;
+
+    if (mod.strategy && mod.visual_concept) {
+      // Split available space between strategy and visual_concept
+      const contentH = available - BETWEEN_GAP;
+      const stratH = Math.max(contentH * 0.42, 0.1);
+      const conceptH = Math.max(contentH - stratH, 0.1);
+
       slide.addText(mod.strategy, {
-        x: annX, y: annotY + 0.15, w: annW, h: Math.max(stratH - 0.15, 0.1),
+        x: annX, y: annotY, w: annW, h: stratH,
         fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
         valign: "top", shrinkText: true,
       });
-      annotY += stratH + 0.06;
-    }
+      annotY += stratH + BETWEEN_GAP;
 
-    if (mod.visual_concept && annotY < annotBottom) {
-      // em-rule separator
-      slide.addText("— — —", {
-        x: annX, y: annotY, w: annW, h: 0.13,
-        fontSize: 6, fontFace: FONT.body, color: COLOR.midGray,
-        valign: "top",
-      });
-      annotY += 0.14;
-      slide.addText("Visual Concept", {
-        x: annX, y: annotY, w: annW, h: 0.14,
-        fontSize: 6, fontFace: FONT.body, color: COLOR.darkGray,
-        bold: true, italic: true, valign: "top",
-      });
-      annotY += 0.15;
       slide.addText(mod.visual_concept, {
-        x: annX, y: annotY, w: annW, h: Math.max(annotBottom - annotY, 0.1),
+        x: annX, y: annotY, w: annW, h: conceptH,
+        fontSize: 6.5, fontFace: FONT.body, color: COLOR.darkGray,
+        italic: true, valign: "top", shrinkText: true,
+      });
+    } else if (mod.strategy) {
+      slide.addText(mod.strategy, {
+        x: annX, y: annotY, w: annW, h: Math.max(available, 0.1),
+        fontSize: 7, fontFace: FONT.body, color: COLOR.bodyText,
+        valign: "top", shrinkText: true,
+      });
+    } else if (mod.visual_concept) {
+      slide.addText(mod.visual_concept, {
+        x: annX, y: annotY, w: annW, h: Math.max(available, 0.1),
         fontSize: 6.5, fontFace: FONT.body, color: COLOR.darkGray,
         italic: true, valign: "top", shrinkText: true,
       });
@@ -1169,11 +1164,11 @@ function buildAllShotTypesSlides(shotsByType, typeKeys) {
         addDivider(slide, MARGIN, optY, CONTENT_W, COLOR.midGray, 0.5);
       }
 
-      // Line 1: option_id · AR · lighting
+      // Line 1: option_id · AR · fits_deliverables
       const metaBits = [
         opt.option_id || "",
-        opt.aspect_ratio ? `AR ${opt.aspect_ratio}` : null,
-        opt.lighting ? opt.lighting : null,
+        opt.aspect_ratio ? `Aspect Ratio ${opt.aspect_ratio}` : null,
+        opt.fits_deliverables ? opt.fits_deliverables : null,
       ].filter(Boolean).join("  ·  ");
 
       slide.addText(metaBits, {
