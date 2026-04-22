@@ -72,3 +72,20 @@ Return a JSON object with two keys. This populates `products[n].deliverables.lis
 
 ### Forbidden fields
 Do **not** emit `prompt`, `deliverable_type`, `image_number`, or `strategic_why`. Prompts are authored in Phase 5; field naming has been unified.
+
+### Example (quality bar)
+
+<example>
+{
+  "slot_number": 3,
+  "role_in_sequence": "Middle",
+  "image_type": "infographic",
+  "visual_concept": "Side-by-side cross-section of the bottle showing the dual-chamber design — active serum on one side, preservative-free carrier on the other. Subtle arrows indicate how they combine at point of use. Neutral studio backdrop, soft top-down light, warm accent pulled from brand primary.",
+  "copy": {
+    "heading": "Two chambers, one fresh dose",
+    "subheading": "Actives stay separated until you press — so every application is as potent as day one.",
+    "bullet_points": null
+  },
+  "strategy": "Slot 1 promised freshness; this slot proves the mechanism. Addresses the top negative-review theme across competitors ('went off after 2 weeks') before the use-case middle slots build on the proof."
+}
+</example>
