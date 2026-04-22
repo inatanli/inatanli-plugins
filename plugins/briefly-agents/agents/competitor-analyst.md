@@ -25,7 +25,7 @@ Competitor Research Progress:
 ### Step 1: Get Competitors
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/bin/get_competitors.py --asin {ASIN}
+python ${CLAUDE_PLUGIN_ROOT}/bin/get_competitors.py --asin {ASIN} --marketplace {MARKETPLACE}
 ```
 
 Returns up to 4 ASINs with competitive overlap data. **The first result is always the input ASIN itself.**
@@ -42,7 +42,7 @@ Preserve the `intersecting_keywords` and `avg_position` values from each competi
 **Fetch ALL competitor ASINs in a single batch call using `--asins` (plural). Do not call fetch_product.py multiple times with `--asin` (singular) for individual competitors.** One call, all ASINs at once:
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asins {ASIN_1} {ASIN_2} {ASIN_3}
+python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asins {ASIN_1} {ASIN_2} {ASIN_3} --marketplace {MARKETPLACE}
 ```
 
 Returns a list of product dicts in the same order as the input ASINs.
@@ -64,6 +64,7 @@ Across all competitors, identify:
 - Visual patterns they all follow (what's table stakes)
 - Gaps in their visual strategy (opportunities to differentiate)
 - Common complaints we can address in our creative
+Each item ≤25 words — one observation per bullet.
 
 ## Error Handling
 
