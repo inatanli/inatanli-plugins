@@ -84,14 +84,14 @@ Return a JSON object. This populates `products[n].deliverables.aplus`.
 }
 ```
 
-Modules 3, 4, 5 follow the same `1464x600` / `headline + body` shape as module 2. Module 6 uses the same shape but respects the ≤36-char headline and ≤50-word body caps.
+Modules 3, 4, 5 follow the same `1464x600` / `headline + body` shape as module 2, with a ≤60-word body cap. Module 6 uses the same shape but respects the ≤36-char headline and ≤50-word body caps.
 
 ### Field rules
 - `module_number` — integers 1–6, in order.
 - `module_role` — must match the enum exactly. Positional rules above are enforced by the validator.
 - `dimensions` — `1464x1200` for module 1 only; all others `1464x600`.
 - `copy` — always an object. Fields not used for a given role are `null` (never omitted). Hero-only fields (`tagline`, `product_name`, `description`, `icons`) appear only on module 1; standard fields (`headline`, `body`) appear only on modules 2–6.
-- `strategy` — cites a research insight **and** notes distinction from earlier deliverables.
+- `strategy` — ≤40 words. Cite a research insight and note distinction from earlier deliverables.
 - `wireframe_description` — spatial zones only.
 
 ### Forbidden fields

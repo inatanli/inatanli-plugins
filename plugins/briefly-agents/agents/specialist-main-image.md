@@ -56,7 +56,7 @@ Return a JSON array of exactly 5 objects. This populates `products[n].deliverabl
 - `version_number` — integers 1–5.
 - `strategy_name` — must match an entry in the Main Image Strategy Inventory below verbatim. Do not invent new strategies.
 - `feature` — one feature/USP. Keep it concrete (e.g., "Double-walled insulation", not "premium quality").
-- `strategy` — one sentence. Must cite a research insight: keyword, USP, complaint, competitor pattern, or gap.
+- `strategy` — 1–2 sentences, ≤40 words. Cite the research signal and state the creative move.
 - `visual_concept` — paragraph. Covers angle, lighting, shadow, material, and any scale/use cue. Honors the Creative Director's `visual_direction`.
 - `wireframe_description` — plain text. Spatial zones only. Used to generate the B&W wireframe in the deck.
 

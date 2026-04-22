@@ -44,7 +44,7 @@ Return a JSON object with two keys. This populates `products[n].deliverables.lis
 
 ```json
 {
-  "sequence_strategy": "One paragraph explaining the arc, which act does what, and why this ordering fits this product's research.",
+  "sequence_strategy": "≤50 words. Explain the arc, which act does what, and why this ordering fits this product's research.",
   "images": [
     {
       "slot_number": 1,
@@ -64,7 +64,7 @@ Return a JSON object with two keys. This populates `products[n].deliverables.lis
 - `role_in_sequence` — `Opening` (slots 1–2), `Middle` (3–6), `Closing` (7).
 - `image_type` — `full_bleed` or `infographic`. Respect the distribution caps above.
 - `copy` — string or null. Use `\n` for line breaks. Null where the image is purely emotional.
-- `strategy` — one to three sentences. Must cite a research insight **and** justify position in the arc.
+- `strategy` — 1–2 sentences, ≤40 words. Cite a research insight and justify arc position.
 - `wireframe_description` — spatial zones only.
 
 ### Forbidden fields
