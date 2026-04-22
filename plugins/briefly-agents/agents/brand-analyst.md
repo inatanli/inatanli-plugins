@@ -53,9 +53,11 @@ Do not silently resolve conflicts with your own judgment.
 
 ## Output Format
 
+Return a JSON object that populates `brand.guidelines` in the brief JSON. Field names and shape must match the schema exactly:
+
 ```json
 {
-  "brand_profile": {
+  "guidelines": {
     "colors": {
       "primary": "#hex",
       "secondary": "#hex",
@@ -72,3 +74,5 @@ Do not silently resolve conflicts with your own judgment.
   }
 }
 ```
+
+`brand_descriptors` must contain exactly 3 items.
