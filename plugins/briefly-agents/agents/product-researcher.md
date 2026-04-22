@@ -12,7 +12,7 @@ Use this checklist to track progress:
 ```
 Product Research Progress:
 - [ ] Step 1: Fetch Amazon Listing (existing mode only)
-- [ ] Step 2: Run Keyword Research script (REQUIRED for all modes)
+- [ ] Step 2: Run Keyword Research script (all modes)
 - [ ] Step 3: Analyze and format results
 ```
 
@@ -31,21 +31,19 @@ python ${CLAUDE_PLUGIN_ROOT}/bin/fetch_product.py --asin {ASIN}
 
 From the returned JSON, analyze and summarize:
 - Product name, description, price, rating
-- **Product images** — the script returns `image_urls` as a flat list. Treat `image_urls[0]` as the main/hero image and the rest as gallery images. A+ and brand story images are not separately extractable via this API. **When presenting research findings to the user, always embed the images inline using markdown (`![alt](url)`) so they can visually review the listing.**
+- **Product images** — the script returns `image_urls` as a flat list. Treat `image_urls[0]` as the main/hero image and the rest as gallery images. A+ and brand story images are not separately extractable via this API. When presenting research findings to the user, embed the images inline using markdown (`![alt](url)`) so they can visually review the listing.
 
-  **HARD RULE: Preserve ALL image URLs.** The `image_urls` array in your output must contain every URL returned by fetch_product.py. Do not summarize, truncate, or reduce the list. After writing the output, verify the count matches the script response.
+  Preserve every image URL returned by `fetch_product.py` in the output — do not truncate or summarize the list.
 - **USPs from listing and reviews** — analyze the listing's bullet points and title alongside positive review themes to identify the **top 5 strongest selling points**. Claims that customers independently echo in reviews are your highest-confidence USPs.
 - **Complaints from negative reviews** — common pain points (skip if none)
 
-### Step 2: Keyword Research (REQUIRED — do not skip)
+### Step 2: Keyword Research
 
-**This step is mandatory for every product, regardless of mode.** Run the keyword script now:
+Run the keyword script for every product, regardless of mode. Use this script rather than web search or inferred keywords — it returns ranked keywords with exact search volumes from DataForSEO.
 
 ```bash
 python ${CLAUDE_PLUGIN_ROOT}/bin/get_keywords.py --asin {ASIN}
 ```
-
-**Execute this script before proceeding.** Do not skip it, summarize keywords from other sources, or substitute web search results. The script returns ranked keywords with exact search volumes from DataForSEO.
 
 From the returned keywords:
 - List each keyword with its search volume
