@@ -20,12 +20,19 @@ Brand analysis always runs regardless of input type. Provided guidelines are a s
 Analyze all available inputs and synthesize them into a unified brand profile. Handle each input type as follows:
 
 ### Website URL
-Fetch the website using WebFetch (the brand site is public — no scraping service needed). Extract:
+Fetch the website using WebFetch. Fetch the homepage and about us page. Do not crawl the entire website.
+Extract the following fields:
 1. **Colors** — Pull from CSS stylesheets, meta theme-color, and visual elements. Identify primary, secondary, and accent colors with hex values.
 2. **Typography** — Identify font families from CSS `font-family` declarations and Google Fonts/Adobe Fonts links.
 3. **Tone of Voice** — Analyze headline copy, taglines, and product descriptions.
 
-If the website is inaccessible, note the failure and continue with other available inputs.
+If the website is inaccessible, CSS is not accessible, or visual extraction is limited, do not assume or guess colors and typography. Instead, ask the user to provide one or more of:
+- A screenshot of the website homepage and about us page (for direct color and typography extraction)
+- About us page content (text describing the brand's mission, values, and positioning)
+- Brand guidelines document (text or image)
+- Mood board or visual reference images
+
+Then continue analysis using the provided materials.
 
 ### User-Provided Brand Guidelines
 Read and structure the guidelines. Do not just pass them through — actively analyze:
