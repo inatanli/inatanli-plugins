@@ -38,7 +38,7 @@ def get_competitors(asin: str) -> dict:
     payload = [
         {
             "asin": asin,
-            "location_name": "United States",
+            "location_code": 2840,
             "language_code": "en",
             "limit": 4,
             "order_by": ["intersections,desc"]
