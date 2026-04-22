@@ -38,7 +38,7 @@ def get_keywords(asin: str) -> dict:
     payload = [
         {
             "asin": asin,
-            "location_name": "United States",
+            "location_code": 2840,
             "language_code": "en",
             "limit": 5,
             "order_by": ["keyword_data.keyword_info.search_volume,desc"]

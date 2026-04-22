@@ -273,6 +273,75 @@ def _check_shot_list(prefix, product, errors, warnings):
         })
 
 
+def _check_word_caps(brief, errors):
+    products = brief.get("products") or []
+    for i, product in enumerate(products):
+        prefix = f"products[{i}]"
+        
+        # Research
+        research = product.get("research") or {}
+        visual_implication = research.get("visual_implication")
+        if visual_implication and _word_count(visual_implication) > 50:
+            errors.append({"path": f"{prefix}.research.visual_implication", "message": f"visual_implication exceeds 50-word cap (got {_word_count(visual_implication)})"})
+            
+        gap_analysis = research.get("gap_analysis") or {}
+        for gap_field in ["visual_patterns", "differentiation_opportunities", "complaints_to_address"]:
+            for j, item in enumerate(gap_analysis.get(gap_field) or []):
+                if _word_count(item) > 25:
+                    errors.append({"path": f"{prefix}.research.gap_analysis.{gap_field}[{j}]", "message": f"{gap_field} item exceeds 25-word cap (got {_word_count(item)})"})
+
+        # Creative Direction
+        creative_direction = product.get("creative_direction") or {}
+        pos_statement = creative_direction.get("positioning_statement")
+        if pos_statement and _word_count(pos_statement) > 60:
+            errors.append({"path": f"{prefix}.creative_direction.positioning_statement", "message": f"positioning_statement exceeds 60-word cap (got {_word_count(pos_statement)})"})
+            
+        for j, msg in enumerate(creative_direction.get("key_messages") or []):
+            if _word_count(msg) > 30:
+                errors.append({"path": f"{prefix}.creative_direction.key_messages[{j}]", "message": f"key_message exceeds 30-word cap (got {_word_count(msg)})"})
+                
+        comp_diff = creative_direction.get("competitive_differentiation")
+        if comp_diff and _word_count(comp_diff) > 60:
+            errors.append({"path": f"{prefix}.creative_direction.competitive_differentiation", "message": f"competitive_differentiation exceeds 60-word cap (got {_word_count(comp_diff)})"})
+
+        visual_direction = creative_direction.get("visual_direction") or {}
+        for vd_field in ["color_world", "lighting_signature", "model_direction", "prop_styling", "environment_surface_direction", "mood"]:
+            vd_val = visual_direction.get(vd_field)
+            if vd_val and _word_count(vd_val) > 45:
+                errors.append({"path": f"{prefix}.creative_direction.visual_direction.{vd_field}", "message": f"visual_direction.{vd_field} exceeds 45-word cap (got {_word_count(vd_val)})"})
+
+        # Deliverables
+        deliverables = product.get("deliverables") or {}
+        
+        main_image = deliverables.get("main_image") or []
+        for j, version in enumerate(main_image):
+            strategy = version.get("strategy")
+            if strategy and _word_count(strategy) > 40:
+                errors.append({"path": f"{prefix}.deliverables.main_image[{j}].strategy", "message": f"Main image strategy exceeds 40-word cap (got {_word_count(strategy)})"})
+                
+        listing_images = deliverables.get("listing_images") or {}
+        seq_strategy = listing_images.get("sequence_strategy")
+        if seq_strategy and _word_count(seq_strategy) > 50:
+            errors.append({"path": f"{prefix}.deliverables.listing_images.sequence_strategy", "message": f"sequence_strategy exceeds 50-word cap (got {_word_count(seq_strategy)})"})
+            
+        for j, img in enumerate(listing_images.get("images") or []):
+            strategy = img.get("strategy")
+            if strategy and _word_count(strategy) > 40:
+                errors.append({"path": f"{prefix}.deliverables.listing_images.images[{j}].strategy", "message": f"Listing image strategy exceeds 40-word cap (got {_word_count(strategy)})"})
+
+        aplus = deliverables.get("aplus") or {}
+        for j, mod in enumerate(aplus.get("modules") or []):
+            strategy = mod.get("strategy")
+            if strategy and _word_count(strategy) > 40:
+                errors.append({"path": f"{prefix}.deliverables.aplus.modules[{j}].strategy", "message": f"A+ module strategy exceeds 40-word cap (got {_word_count(strategy)})"})
+            
+            num = mod.get("module_number")
+            if num in [2, 3, 4, 5]:
+                body = (mod.get("copy") or {}).get("body")
+                if body and _word_count(body) > 60:
+                    errors.append({"path": f"{prefix}.deliverables.aplus.modules[{j}].copy.body", "message": f"A+ module {num} copy.body exceeds 60-word cap (got {_word_count(body)})"})
+
+
 def _check_phase_scope(brief, phase, errors):
     products = brief.get("products") or []
     if phase >= 1:
@@ -332,6 +401,8 @@ def validate_brief(input_path: str, phase: int | None = None) -> dict:
             errors.append({"path": path, "message": error.message})
     else:
         _check_phase_scope(brief, phase, errors)
+
+    _check_word_caps(brief, errors)
 
     products = brief.get("products") or []
     for i, product in enumerate(products):
