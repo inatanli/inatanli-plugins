@@ -78,6 +78,18 @@ Return a JSON object. This populates `products[n].shot_list`.
         "resolution": "2K",
         "camera": "Fujifilm GFX + 63mm f/2.8",
         "fits_deliverables": ["main_image.v1", "aplus.module_2"]
+      },
+      {
+        "option_id": "studio_styled_02",
+        "prompt": "A high-resolution studio product photograph of … The product sits on … Lighting is … Shadow is … Color temperature is … Aspect ratio 1:1. 2K resolution. No text, no watermark, no copy overlays, no typography rendered inside the image.",
+        "lighting": "Hard directional side-key from camera right, minimal fill",
+        "shadows": "Deep cast shadow falling left",
+        "surface_material": "Brushed concrete slab",
+        "color_temperature": "Neutral 5500K daylight",
+        "aspect_ratio": "1:1",
+        "resolution": "2K",
+        "camera": null,
+        "fits_deliverables": ["main_image.v2", "listing_image.slot_2"]
       }
     ]
   }
@@ -92,8 +104,12 @@ Return a JSON object. This populates `products[n].shot_list`.
 - `camera` — string or `null`.
 - `fits_deliverables` — array of deliverable references. At least one per option.
 
-### Only emit shot types you use
-`shots_by_type` may include any subset of the 9 keys — but each key you include must have ≥1 option. Do not emit empty arrays.
+### Shot type selection and options
+You must select relevant shot types based on the product, research findings, and narrative arc. For each shot type chosen, create 2–3 options per selected shot type (different angles, compositions, prop arrangements) to give designers variety.
+
+Option IDs must be unique across the entire `shots_by_type` object. Convention: `{shot_type}_{nn}` (e.g., `studio_styled_01`, `studio_styled_02`).
+
+Only emit shot types you use — each key you include must have 2–3 options. Do not emit empty arrays.
 
 ---
 
