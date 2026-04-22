@@ -19,22 +19,28 @@
       ],
       "properties": {
         "color_world": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 380
         },
         "lighting_signature": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 380
         },
         "model_direction": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 380
         },
         "prop_styling": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 380
         },
         "environment_surface_direction": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 380
         },
         "mood": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 380
         }
       }
     },
@@ -90,6 +96,43 @@
               "type": "string"
             }
           }
+        }
+      }
+    }
+  },
+  "copyBlock": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "description": "Unified copy block. Select only fields applicable to the image type and visual concept. Not all fields are required — an image may have just a heading and subheading with no bullet points.",
+    "properties": {
+      "heading": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Hero headline or main hook. Bold, benefit-driven statement that captures attention in under 2 seconds.",
+        "maxLength": 80
+      },
+      "subheading": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Supporting context, emotional appeal, or explanation of the 'how'. Max 1-2 concise sentences.",
+        "maxLength": 250
+      },
+      "bullet_points": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "description": "Specific technical callouts, specs, proof points, or trust signals. Fragment sentences preferred. Select from: technical specs, dimensions/capacity, material/construction, usage/compatibility, safety/certifications, maintenance/care, social proof, environmental impact, performance metrics — only what is applicable.",
+        "maxItems": 5,
+        "items": {
+          "type": "string",
+          "maxLength": 100
         }
       }
     }
@@ -348,7 +391,8 @@
                 }
               },
               "visual_implication": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 400
               },
               "gap_analysis": {
                 "type": "object",
@@ -361,21 +405,24 @@
                   "visual_patterns": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 200
                     },
                     "minItems": 1
                   },
                   "differentiation_opportunities": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 200
                     },
                     "minItems": 1
                   },
                   "complaints_to_address": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 200
                     },
                     "minItems": 1
                   }
@@ -393,19 +440,22 @@
             ],
             "properties": {
               "positioning_statement": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               "key_messages": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 250
                 }
               },
               "visual_direction": {
                 "$ref": "#/$defs/visualDirection"
               },
               "competitive_differentiation": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               }
             }
           },
@@ -426,8 +476,7 @@
                     "strategy_name",
                     "feature",
                     "strategy",
-                    "visual_concept",
-                    "wireframe_description"
+                    "visual_concept"
                   ],
                   "properties": {
                     "version_number": {
@@ -442,13 +491,12 @@
                       "type": "string"
                     },
                     "strategy": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 320
                     },
                     "visual_concept": {
-                      "type": "string"
-                    },
-                    "wireframe_description": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 400
                     }
                   }
                 }
@@ -464,7 +512,8 @@
                 ],
                 "properties": {
                   "sequence_strategy": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 400
                   },
                   "images": {
                     "type": "array",
@@ -477,8 +526,7 @@
                         "role_in_sequence",
                         "image_type",
                         "visual_concept",
-                        "strategy",
-                        "wireframe_description"
+                        "strategy"
                       ],
                       "properties": {
                         "slot_number": {
@@ -505,16 +553,11 @@
                           "type": "string"
                         },
                         "copy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "$ref": "#/$defs/copyBlock"
                         },
                         "strategy": {
-                          "type": "string"
-                        },
-                        "wireframe_description": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 320
                         }
                       }
                     }
@@ -572,65 +615,11 @@
                           "type": "string"
                         },
                         "copy": {
-                          "type": "object",
-                          "properties": {
-                            "tagline": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "product_name": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "icons": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
-                              "minItems": 3,
-                              "maxItems": 3,
-                              "items": {
-                                "type": "object",
-                                "required": [
-                                  "label",
-                                  "description"
-                                ],
-                                "properties": {
-                                  "label": {
-                                    "type": "string"
-                                  },
-                                  "description": {
-                                    "type": "string"
-                                  }
-                                }
-                              }
-                            },
-                            "headline": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            },
-                            "body": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
-                            }
-                          }
+                          "$ref": "#/$defs/copyBlock"
                         },
                         "strategy": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 320
                         },
                         "wireframe_description": {
                           "type": "string"
