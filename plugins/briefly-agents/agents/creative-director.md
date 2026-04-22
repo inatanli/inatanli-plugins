@@ -64,7 +64,7 @@ These rules apply to every downstream agent (specialists in Phase 4, shot-list-d
 - Every creative decision must ladder back to a specific research insight (USP, keyword intent, competitor gap).
 - Amazon graphics span multiple image types — lifestyle with product, editorial product photography, studio product shoots, product-in-scene. Specialists pick the type that best fits their deliverable; the shot-list-director matches prompts to those choices.
 - Follow Amazon content policies: no unsubstantiated claims, no superlatives ("best," "#1"), no health claims without approval.
-- Text-to-image prompts are **not** authored at this stage. Specialists write `visual_concept` + `wireframe_description` only. Prompts are generated in Phase 5 by the shot-list-director.
+- Text-to-image prompts are **not** authored at this stage. Specialists write `visual_concept` + `strategy` only. Prompts are generated in Phase 5 by the shot-list-director.
 
 ## Per-Deliverable Output Structure
 
@@ -73,6 +73,5 @@ Each specialist generates per deliverable. Specialist outputs populate `products
 - **`visual_concept`** — scene description, composition, what the image shows.
 - **`copy`** — text overlays, headlines, bullet points (shape varies by deliverable type; some are `null`).
 - **`strategy`** — which research insight, keyword, or competitor gap this asset addresses.
-- **`wireframe_description`** — spatial layout description: product placement, text zones, composition areas (not a scene description).
 
 Specialists must **not** emit a `prompt` field. Prompts live only in `products[n].shot_list`.
