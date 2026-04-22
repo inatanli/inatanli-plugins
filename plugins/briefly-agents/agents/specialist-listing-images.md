@@ -50,10 +50,13 @@ Return a JSON object with two keys. This populates `products[n].deliverables.lis
       "slot_number": 1,
       "role_in_sequence": "Opening",
       "image_type": "full_bleed",
-      "visual_concept": "Scene description: subject, action, environment, lighting, mood. Honors the Creative Director's visual_direction.",
-      "copy": "Short headline\\nSupporting phrase",
-      "strategy": "Why this slot exists here, tied to a specific research signal (keyword intent, USP, competitor gap, complaint).",
-      "wireframe_description": "Spatial layout: product position + % of frame, copy zones, negative space. Not a scene description."
+      "visual_concept": "Scene description: subject, action, environment, lighting, mood. ≤600 chars.",
+      "copy": {
+        "heading": "Short headline",
+        "subheading": "Supporting phrase",
+        "bullet_points": null
+      },
+      "strategy": "≤50 words. Why this slot exists here, tied to a specific research signal."
     }
   ]
 }
@@ -63,9 +66,9 @@ Return a JSON object with two keys. This populates `products[n].deliverables.lis
 - `slot_number` — integers 1–7, in order.
 - `role_in_sequence` — `Opening` (slots 1–2), `Middle` (3–6), `Closing` (7).
 - `image_type` — `full_bleed` or `infographic`. Respect the distribution caps above.
-- `copy` — string or null. Use `\n` for line breaks. Null where the image is purely emotional.
-- `strategy` — 1–2 sentences, ≤40 words. Cite a research insight and justify arc position.
-- `wireframe_description` — spatial zones only.
+- `copy` — object using the `copyBlock` shape. Use **Word Targets** for rhythm: **Heading (≤8 words)**, **Subheading (20–25 words)**. Ensure it stays under the **250-character hard cap** in the schema. Null where the image is purely emotional.
+- `strategy` — 1–2 sentences, ≤50 words. Cite a research insight and justify arc position.
+- `visual_concept` — ≤600 chars.
 
 ### Forbidden fields
 Do **not** emit `prompt`, `deliverable_type`, `image_number`, or `strategic_why`. Prompts are authored in Phase 5; field naming has been unified.
