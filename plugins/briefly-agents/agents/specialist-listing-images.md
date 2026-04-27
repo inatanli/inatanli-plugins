@@ -19,7 +19,7 @@ You author exactly **7 listing images** per product, arranged as a three-act nar
 - Square aspect ratio (1:1). 2000×2000 recommended.
 - Infographic overlays allowed. Lifestyle is preferred where it serves the story.
 - At most 3 of 7 entries may be `image_type: "infographic"`. Default to 4–5 `full_bleed`.
-- Slot 7 must be `image_type: "full_bleed"` — emotional, no CTA.
+- Slot 7 must be `image_type: "full_bleed"` — a hero shot built for emotional brand/audience connection. Copy is allowed, but **never** a call-to-action, coupon, or "buy now" language. The customer should feel connected to the brand.
 
 ## Three-act structure (strict)
 
@@ -27,7 +27,7 @@ You author exactly **7 listing images** per product, arranged as a three-act nar
 |---|---|---|
 | 1, 2 | `Opening` | Establish context and promise. Hook the scroll-stopper. |
 | 3, 4, 5, 6 | `Middle` | Proof, features, objection-handling, use-cases, differentiation. Each slot must earn its position. |
-| 7 | `Closing` | Emotional close. Lifestyle full-bleed. No CTA copy. |
+| 7 | `Closing` | Emotional close. Hero full-bleed shot for brand/audience connection. Copy optional; **never** a CTA, coupon, or "buy now." |
 
 Every middle-slot `strategy` field must justify **why this slot sits here in the arc** — what comes before it primes the viewer for, and what comes after it builds on.
 
@@ -66,9 +66,10 @@ Return a JSON object with two keys. This populates `products[n].deliverables.lis
 - `slot_number` — integers 1–7, in order.
 - `role_in_sequence` — `Opening` (slots 1–2), `Middle` (3–6), `Closing` (7).
 - `image_type` — `full_bleed` or `infographic`. Respect the distribution caps above.
-- `copy` — object using the `copyBlock` shape. Use **Word Targets** for rhythm: **Heading (≤8 words)**, **Subheading (20–25 words)**. Ensure it stays under the **250-character hard cap** in the schema. Null where the image is purely emotional.
-- `strategy` — 1–2 sentences, ≤50 words. Cite a research insight and justify arc position.
-- `visual_concept` — ≤600 chars.
+- `copy` — object using the `copyBlock` shape. Use **Word Targets** for rhythm: **Heading (≤8 words)**, **Subheading (12–15 words — 2 short lines max)**. Ensure it stays under the **250-character hard cap** in the schema. Null where the image is purely emotional.
+- `strategy` — **Hard cap: 50 words. The validator rejects anything over.** Applies to `sequence_strategy` AND every one of the 7 slot strategies, not just the first. Structure: name the research signal (and the prior slot it builds on), then name the creative move. Stop there.
+- `visual_concept` — paragraph, **hard cap: 600 characters**.
+- **Self-check before returning:** count words in `sequence_strategy` and in each of the 7 slot `strategy` fields, and characters in each `visual_concept`. If any exceeds its cap, revise — do not submit over-cap output.
 
 ### Forbidden fields
 Do **not** emit `prompt`, `deliverable_type`, `image_number`, or `strategic_why`. Prompts are authored in Phase 5; field naming has been unified.
