@@ -553,7 +553,7 @@ function buildKeyUsps(product) {
     slide.addText(text, {
       x: x + 0.12, y: y + 0.12, w: tileW - 0.24, h: PILL_H - 0.24,
       fontSize: T.body, fontFace: F.body, color: C.white,
-      align: "center", valign: "middle", bold: true, shrinkText: true,
+      align: "center", valign: "middle", bold: false, shrinkText: true,
     });
   };
 
