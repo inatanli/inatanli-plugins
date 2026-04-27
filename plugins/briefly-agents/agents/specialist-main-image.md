@@ -55,8 +55,9 @@ Return a JSON array of exactly 5 objects. This populates `products[n].deliverabl
 - `version_number` — integers 1–5.
 - `strategy_name` — must match an entry in the Main Image Strategy Inventory below verbatim. Do not invent new strategies.
 - `feature` — one feature/USP. Keep it concrete (e.g., "Double-walled insulation", not "premium quality").
-- `strategy` — 1–2 sentences, ≤50 words. Cite the research signal and state the creative move.
-- `visual_concept` — paragraph, ≤600 chars. Covers angle, lighting, shadow, material, and any scale/use cue. Honors the Creative Director's `visual_direction`.
+- `strategy` — **Hard cap: 50 words. The validator rejects anything over.** Applies to every one of the 5 versions, not just the first. Structure: one sentence naming the research signal (keyword + volume, USP, competitor gap, or complaint), one sentence naming the creative move that addresses it. Stop there.
+- `visual_concept` — paragraph, **hard cap: 600 characters**. Covers angle, lighting, shadow, material, and any scale/use cue. Honors the Creative Director's `visual_direction`.
+- **Self-check before returning:** for each of the 5 versions, count words in `strategy` and characters in `visual_concept`. If any exceeds its cap, revise — do not submit over-cap output.
 
 ### Forbidden fields
 Do **not** emit `prompt`, `copy`, or `strategic_why`. Prompts belong to the shot-list-director in Phase 5; `copy` is always null for main image; `strategic_why` has been renamed to `strategy`.
