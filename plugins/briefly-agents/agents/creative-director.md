@@ -43,8 +43,13 @@ Return your creative direction as JSON. This populates `products[n].creative_dir
 }
 ```
 
-- `key_messages`: 3–5 items, each tied to a specific research insight (USP, keyword, competitor gap). Each message: headline-weight sentence + one supporting clause. ≤30 words per message.
-- `visual_direction`: six narrative fields (see below). Write each as 1-2 dense sentences (≤45 words) — be highly specific for prompt generation, but keep it brief enough for presentation slides.
+- `key_messages`: 3–5 items, each tied to a specific research insight (USP, keyword, competitor gap).
+  - **Hard cap: 30 words per message. The validator rejects anything over.**
+  - Structure: a headline-weight clause + one supporting clause, then stop. Not two full sentences of prose.
+- `visual_direction`: six narrative fields (see below).
+  - **Hard cap: 45 words per field. The validator rejects anything over.** Applies to all six fields, not just the first.
+  - Structure: 1–2 dense sentences. Density inside the cap, not over it.
+- **Self-check before returning:** count words in each of the six `visual_direction` fields and each `key_message`. If any exceeds its cap, cut — do not submit over-cap output.
 
 ### Visual direction fields
 
