@@ -45,6 +45,7 @@ def extract_product_data(task: dict) -> dict:
     # Rating
     rating_obj = product.get("rating") or {}
     rating_value = str(rating_obj.get("value", "")) if rating_obj.get("value") else ""
+    reviews_count = rating_obj.get("votes_count")
 
     # Price
     price_from = product.get("price_from")
@@ -98,6 +99,7 @@ def extract_product_data(task: dict) -> dict:
         "title": product.get("title", ""),
         "price": price,
         "rating": rating_value,
+        "reviews_count": reviews_count,
         "description": description,
         "image_urls": image_urls,
         "reviews": reviews[:20],  # Cap at 20 reviews for token limits

@@ -289,6 +289,9 @@
                   "rating": {
                     "type": "string"
                   },
+                  "reviews_count": {
+                    "type": ["number", "null"]
+                  },
                   "image_urls": {
                     "type": "array",
                     "items": {
@@ -341,6 +344,9 @@
                     },
                     "rating": {
                       "type": "string"
+                    },
+                    "reviews_count": {
+                      "type": ["number", "null"]
                     },
                     "image_urls": {
                       "type": "array",
