@@ -299,7 +299,8 @@
                   "usps": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 80
                     },
                     "minItems": 1,
                     "maxItems": 5
@@ -307,7 +308,8 @@
                   "complaints": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 80
                     }
                   }
                 }
@@ -321,7 +323,8 @@
                     "asin",
                     "image_urls",
                     "intersecting_keywords",
-                    "avg_position"
+                    "avg_position",
+                    "usps_and_complaints"
                   ],
                   "properties": {
                     "name": {
@@ -358,17 +361,24 @@
                         "null"
                       ]
                     },
+                    "usps_and_complaints": {
+                      "type": "string",
+                      "description": "1–3 sentence natural-language summary combining the competitor's top USPs and top complaints. E.g. 'Known for X and Y. Buyers complain about Z.'",
+                      "maxLength": 220
+                    },
                     "usps": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 80
                       },
                       "maxItems": 5
                     },
                     "complaints": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 80
                       }
                     }
                   }
@@ -408,7 +418,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "maxLength": 200
+                      "maxLength": 140
                     },
                     "minItems": 1
                   },
@@ -416,7 +426,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "maxLength": 200
+                      "maxLength": 140
                     },
                     "minItems": 1
                   },
@@ -424,7 +434,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "maxLength": 200
+                      "maxLength": 140
                     },
                     "minItems": 1
                   }
@@ -449,7 +459,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "maxLength": 250
+                  "maxLength": 90
                 }
               },
               "visual_direction": {
@@ -494,7 +504,7 @@
                     },
                     "strategy": {
                       "type": "string",
-                      "maxLength": 400
+                      "maxLength": 180
                     },
                     "visual_concept": {
                       "type": "string",
@@ -560,7 +570,7 @@
                         },
                         "strategy": {
                           "type": "string",
-                          "maxLength": 400
+                          "maxLength": 120
                         }
                       }
                     }
@@ -622,7 +632,7 @@
                         },
                         "strategy": {
                           "type": "string",
-                          "maxLength": 400
+                          "maxLength": 120
                         }
                       }
                     }
