@@ -53,6 +53,7 @@ From each competitor listing, extract:
 - **Competitor USPs** — what selling points does this listing highlight? What do they lead with in their title, bullet points, and A+ content? Identify the **top 5 short bullet points** capturing their core claims (e.g. "clinically tested", "1000mg per serving", "made in USA").
 - **Negative review complaints** — what are customers unhappy about? How can our visuals address these gaps?
 - Skip complaint analysis if no negative reviews exist
+- **`usps_and_complaints`** — synthesize a single 1–3 sentence natural-language summary combining the top USPs and top complaints. Lead with what the product is known for, then note the key complaint(s). E.g. *"Known for its fast charging and compact size. Buyers frequently complain about the short cable length."* Max 220 characters.
 
 ### Step 3: Gap Analysis
 
@@ -91,6 +92,7 @@ All scripts handle retries and return error JSON internally. If a script returns
       "image_urls": ["..."],
       "intersecting_keywords": 0,
       "avg_position": 0,
+      "usps_and_complaints": "Known for X and Y. Buyers complain about Z.",
       "usps": ["..."],
       "complaints": ["..."]
     }
