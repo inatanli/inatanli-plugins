@@ -19,11 +19,11 @@ You author exactly **6 A+ modules** per product. Each module is delivered as a f
 | # | module_role | Dimensions | Copy shape | CD Target (Words) |
 |---|---|---|---|---|
 | 1 | `hero_with_icons` | `1464x1200` | `heading`, `subheading`, `bullet_points` | **6 words** (Heading), **18–22 words** (Subhead), **≤4 words** (Bullets) |
-| 2 | `expand_or_deepen` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **30–35 words** (Subhead) |
-| 3 | `new_territory` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **30–35 words** (Subhead) |
-| 4 | `new_territory` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **30–35 words** (Subhead) |
-| 5 | `bridge_to_close` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **30–35 words** (Subhead) |
-| 6 | `brand_closing` | `1464x600` | `heading` + `subheading` | **≤6 words** (Heading), **15–20 words** (Subhead) |
+| 2 | `expand_or_deepen` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **20–25 words** (Subhead) |
+| 3 | `new_territory` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **20–25 words** (Subhead) |
+| 4 | `new_territory` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **20–25 words** (Subhead) |
+| 5 | `bridge_to_close` | `1464x600` | `heading` + `subheading` | **≤8 words** (Heading), **20–25 words** (Subhead) |
+| 6 | `brand_closing` | `1464x600` | `heading` + `subheading` | **≤6 words AND ≤36 characters** (Heading), **15–20 words** (Subhead) |
 
 ### Module-role responsibilities
 
@@ -67,7 +67,7 @@ Return a JSON object. This populates `products[n].deliverables.aplus`.
       "visual_concept": "...",
       "copy": {
         "heading": "Benefit-led headline (≤8 words)",
-        "subheading": "Mechanism-led body copy (30–35 words).",
+        "subheading": "Mechanism-led body copy (20–25 words).",
         "bullet_points": null
       },
       "strategy": "..."
@@ -80,9 +80,10 @@ Return a JSON object. This populates `products[n].deliverables.aplus`.
 - `module_number` — integers 1–6, in order.
 - `module_role` — must match the enum exactly.
 - `dimensions` — `1464x1200` for module 1 only; all others `1464x600`.
-- `copy` — always an object using the `copyBlock` shape. Use **Word Targets** in the table above to ensure Premium rhythm. Ensure subheading stays under the **250-character hard cap** in the schema.
-- `strategy` — ≤50 words.
-- `visual_concept` — ≤600 chars.
+- `copy` — always an object using the `copyBlock` shape. Use **Word Targets** in the table above to ensure Premium rhythm. Ensure subheading stays under the **250-character hard cap** in the schema. **Module 6 `heading` is capped at both 6 words AND 36 characters** — count both before submitting.
+- `strategy` — **Hard cap: 50 words. The validator rejects anything over.** Applies to every one of the 6 modules, not just the first. Structure: one sentence naming what main-image/listing already covered (so this module isn't a rerun), one sentence naming what *this* module owns. Stop there.
+- `visual_concept` — paragraph, **hard cap: 600 characters**.
+- **Self-check before returning:** for each of the 6 modules, count words in `strategy` and characters in `visual_concept`. Also count both word and character length on Module 6's `heading`. If any exceeds its cap, revise — do not submit over-cap output.
 
 ### Forbidden fields
 Do **not** emit `prompt`, `interaction_points`, `hotspots`, `deliverable_type`, `tagline`, `product_name`, `description`, `icons`, `headline`, or `body`. A+ modules use the unified `copy` block.
