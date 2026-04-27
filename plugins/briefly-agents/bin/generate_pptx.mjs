@@ -505,7 +505,7 @@ function buildProductOverview(product) {
   if (hasMeta) {
     const meta = [
       prodData.price  || null,
-      prodData.rating ? `★ ${prodData.rating}` : null,
+      prodData.rating ? `★ ${prodData.rating}${prodData.reviews_count ? ` (${prodData.reviews_count.toLocaleString()} reviews)` : ""}` : null,
     ].filter(Boolean).join("   |   ");
     slide.addText(meta, {
       x: rightX, y: ry, w: rightW, h: 0.3,
@@ -774,7 +774,7 @@ function buildCompetitorLandscape(product) {
     }
 
     // Price | Rating
-    const metrics = [comp.price, comp.rating ? `★ ${comp.rating}` : null].filter(Boolean).join("   |   ");
+    const metrics = [comp.price, comp.rating ? `★ ${comp.rating}${comp.reviews_count ? ` (${comp.reviews_count.toLocaleString()} reviews)` : ""}` : null].filter(Boolean).join("   |   ");
     if (metrics) {
       slide.addText(metrics, {
         x: cx + PAD, y: iy, w: colW - PAD * 2, h: 0.22,
