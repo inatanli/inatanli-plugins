@@ -1,6 +1,6 @@
 {
   "name": "briefly-agents",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A multi-agent system that generates research-backed creative briefs for Amazon product graphics. It coordinates specialized agents to conduct autonomous brand audits, competitor analysis, and product research, synthesizing data into a cohesive visual strategy.",
   "author": {
     "name": "inatanli"
