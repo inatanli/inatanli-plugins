@@ -15,9 +15,11 @@ except ImportError:
 
 
 TASK_POST_URL = "https://api.dataforseo.com/v3/merchant/amazon/asin/task_post"
+TASKS_READY_URL = "https://api.dataforseo.com/v3/merchant/amazon/asin/tasks_ready"
 TASK_GET_URL = "https://api.dataforseo.com/v3/merchant/amazon/asin/task_get/advanced"
-POLL_INTERVAL = 5  # seconds between polling attempts
-MAX_POLL_ATTEMPTS = 120  # up to 6 minutes of polling
+POLL_INTERVAL = 5  # seconds between tasks_ready polls
+MAX_POLL_ATTEMPTS = 72  # ~6 minutes of polling
+DIRECT_FALLBACK_AFTER = 36  # switch to direct task_get polling after ~3 minutes
 
 
 def get_auth():
@@ -118,9 +120,11 @@ def fetch_products(asins: list) -> list:
         return [error] * len(asins)
 
     # Step 1: Submit all tasks in a single batch POST
+    # tag = ASIN so we can correlate tasks_ready results back to input index
     payload = [
         {
             "asin": asin,
+            "tag": asin,
             "language_code": "en_US",
             "location_code": 2840,
         }
@@ -136,55 +140,96 @@ def fetch_products(asins: list) -> list:
     data = resp.json()
     tasks_created = data.get("tasks", [])
 
-    # Map original index → task_id; pre-fill errors for tasks that failed to create
+    # Map ASIN → (index, task_id); pre-fill errors for tasks that failed to create
     results = [None] * len(asins)
-    index_to_task_id = {}
+    asin_to_meta = {}  # asin → {"idx": int, "tid": str}
 
     for i, task in enumerate(tasks_created):
+        asin = asins[i] if i < len(asins) else ""
         if task.get("status_code") == 20100:
-            index_to_task_id[i] = task["id"]
+            asin_to_meta[asin] = {"idx": i, "tid": task["id"]}
         else:
             msg = task.get("status_message", "unknown error")
-            results[i] = {"error": f"Task creation failed: {msg}", "asin": asins[i] if i < len(asins) else ""}
+            results[i] = {"error": f"Task creation failed: {msg}", "asin": asin}
 
-    # Step 2: Poll all pending task IDs until complete or timeout
-    pending = dict(index_to_task_id)  # index → task_id
+    # Step 2: Poll tasks_ready; fall back to direct task_get after DIRECT_FALLBACK_AFTER attempts
+    # pending: asin → meta dict (same ref as asin_to_meta, shrinks as tasks complete)
+    pending = dict(asin_to_meta)
 
-    for _ in range(MAX_POLL_ATTEMPTS):
+    for attempt in range(MAX_POLL_ATTEMPTS):
         if not pending:
             break
 
-        completed = []
-        for idx, tid in list(pending.items()):
-            url = f"{TASK_GET_URL}/{tid}"
+        use_direct = attempt >= DIRECT_FALLBACK_AFTER
+
+        if use_direct:
+            # Fallback: poll each pending task ID directly
+            completed = []
+            for asin, meta in list(pending.items()):
+                url = f"{TASK_GET_URL}/{meta['tid']}"
+                try:
+                    resp = requests.get(url, auth=auth, timeout=30)
+                    resp.raise_for_status()
+                    task_data = resp.json()
+                except requests.RequestException:
+                    continue
+                if not task_data.get("tasks"):
+                    continue
+                task = task_data["tasks"][0]
+                status = task.get("status_code")
+                if status == 20000 and task.get("result"):
+                    results[meta["idx"]] = extract_product_data(task)
+                    completed.append(asin)
+                elif status and status >= 40000 and status not in (40601, 40602, 40603):
+                    results[meta["idx"]] = {"error": f"Task failed: {task.get('status_message', 'unknown')}", "asin": asin}
+                    completed.append(asin)
+        else:
+            # Primary: check tasks_ready, match by tag (= ASIN), fetch ready results
             try:
-                resp = requests.get(url, auth=auth, timeout=30)
-                resp.raise_for_status()
-                task_data = resp.json()
-
-                if task_data.get("tasks"):
-                    task = task_data["tasks"][0]
-                    status = task.get("status_code")
-                    if status == 20000 and task.get("result"):
-                        results[idx] = extract_product_data(task)
-                        completed.append(idx)
-                    elif status in (40601, 40602, 40603):
-                        pass  # 40601=handed, 40602=queued, 40603=processing — retry next cycle
-                    elif status and status >= 40000:
-                        results[idx] = {"error": f"Task failed: {task.get('status_message', 'unknown')}", "asin": asins[idx]}
-                        completed.append(idx)
+                ready_resp = requests.get(TASKS_READY_URL, auth=auth, timeout=30)
+                ready_resp.raise_for_status()
+                ready_data = ready_resp.json()
             except requests.RequestException:
-                pass  # transient error, retry next cycle
+                time.sleep(POLL_INTERVAL)
+                continue
 
-        for idx in completed:
-            del pending[idx]
+            ready_items = []  # list of (asin, idx, task_get_url)
+            for task in ready_data.get("tasks", []) or []:
+                for item in task.get("result", []) or []:
+                    tag = item.get("tag", "")
+                    endpoint = item.get("endpoint_advanced", "")
+                    if tag in pending and endpoint:
+                        meta = pending[tag]
+                        ready_items.append((tag, meta["idx"], f"https://api.dataforseo.com{endpoint}"))
+
+            completed = []
+            for asin, idx, url in ready_items:
+                try:
+                    resp = requests.get(url, auth=auth, timeout=30)
+                    resp.raise_for_status()
+                    task_data = resp.json()
+                except requests.RequestException:
+                    continue
+                if not task_data.get("tasks"):
+                    continue
+                task = task_data["tasks"][0]
+                status = task.get("status_code")
+                if status == 20000 and task.get("result"):
+                    results[idx] = extract_product_data(task)
+                    completed.append(asin)
+                elif status and status >= 40000 and status not in (40601, 40602, 40603):
+                    results[idx] = {"error": f"Task failed: {task.get('status_message', 'unknown')}", "asin": asin}
+                    completed.append(asin)
+
+        for asin in completed:
+            del pending[asin]
 
         if pending:
             time.sleep(POLL_INTERVAL)
 
     # Mark anything still pending as timed out
-    for idx in pending:
-        results[idx] = {"error": "Timed out waiting for DataForSEO results", "asin": asins[idx]}
+    for asin, meta in pending.items():
+        results[meta["idx"]] = {"error": "Timed out waiting for DataForSEO results", "asin": asin}
 
     # Ensure no None gaps (shouldn't happen, but be safe)
     for i in range(len(results)):
