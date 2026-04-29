@@ -451,7 +451,7 @@ function buildProductOverview(product) {
   const rightW = CW - leftW - 0.35;
 
   // ── Calculate right-column block height for vertical centering ──
-  const NAME_H   = 0.56;  // 24pt name
+  const NAME_H   = 0.84;  // 18pt name — tall enough for up to 3 lines
   const ASIN_H   = product.asin ? 0.28 : 0;
   const hasMeta  = !!(prodData.price || prodData.rating);
   const META_H   = hasMeta ? 0.36 : 0;
@@ -489,8 +489,8 @@ function buildProductOverview(product) {
 
   slide.addText(product.name || "", {
     x: rightX, y: ry, w: rightW, h: NAME_H,
-    fontSize: T.section, fontFace: F.heading, color: C.orange,
-    bold: true, valign: "top", shrinkText: true,
+    fontSize: T.subhead, fontFace: F.heading, color: C.orange,
+    bold: true, valign: "top",
   });
   ry += NAME_H;
 
@@ -750,13 +750,14 @@ function buildCompetitorLandscape(product) {
 
     let iy = cardTop + PAD;
 
-    // Name
+    // Name — 12pt, up to 3 lines; ASIN starts below actual text height
+    const COMP_NAME_H = 0.6;
     slide.addText(comp.name || "Competitor", {
-      x: cx + PAD, y: iy, w: colW - PAD * 2, h: 0.3,
-      fontSize: T.body, fontFace: F.heading, color: C.orange,
-      bold: true, align: "center", valign: "top", shrinkText: true,
+      x: cx + PAD, y: iy, w: colW - PAD * 2, h: COMP_NAME_H,
+      fontSize: T.caption, fontFace: F.heading, color: C.orange,
+      bold: true, align: "center", valign: "top",
     });
-    iy += 0.32;
+    iy += COMP_NAME_H;
 
     // ASIN (linked)
     if (comp.asin) {
