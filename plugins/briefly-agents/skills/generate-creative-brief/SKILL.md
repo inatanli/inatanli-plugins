@@ -11,7 +11,7 @@ description: >
 
 # Creative Brief Generator
 
-Progress through six phases. Two confirmation gates only — end of Phase 1 (intake recap) and end of Phase 4a (creative direction, bundled with brand + research recap). All other phase transitions auto-advance after presenting output to the user.
+Progress through six phases. Two confirmation gates only — end of Phase 1 (intake recap) and Step 4b (bundled review of brand profile + research highlights + creative direction). Each phase must fully execute and present its output to the user before the next phase begins — do not plan ahead, combine phases, or generate output for a later phase before the current one has completed and been presented.
 
 Exceptions to the no-gate policy:
 - **Missing-data questions** still interrupt (e.g., brand-analyst flagging conflicting accent colors, or a researcher script returning sparse/failed data). These are information gaps, not approval gates — surface them and resolve before continuing.

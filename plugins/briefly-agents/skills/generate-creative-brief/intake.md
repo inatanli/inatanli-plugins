@@ -70,7 +70,7 @@ After collecting everything, present a structured recap:
    - Description: [product description]
    - Deliverables: [...]
 
-**Next Steps:** [what happens after confirmation]
+**Next Steps:** Brand analysis → research → creative strategy review. No further input needed from you until the creative direction review.
 ```
 
 Ask for explicit confirmation before proceeding to Phase 2 (or Phase 3 if no website).
