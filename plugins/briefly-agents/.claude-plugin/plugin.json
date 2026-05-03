@@ -1,7 +1,7 @@
 {
   "name": "briefly-agents",
-  "version": "0.0.2",
-  "description": "A multi-agent system that generates research-backed creative briefs for Amazon product graphics. It coordinates specialized agents to conduct autonomous brand audits, competitor analysis, and product research, synthesizing data into a cohesive visual strategy.",
+  "version": "0.0.3",
+  "description": "A multi-agent system that generates research-backed creative briefs for Amazon product graphics. It coordinates specialized agents to conduct autonomous brand audits, competitor analysis, and product research, synthesizing data into a cohesive visual strategy. Now with streamlined UX — fewer confirmation gates for faster brief generation.",
   "author": {
     "name": "inatanli"
   },
@@ -14,6 +14,7 @@
     "marketing",
     "automation"
   ],
+  "releaseNotes": "v0.0.3 — Streamlined UX\n\n**refactor(brief-flow)**: Reduce confirmation gates from 7 to 2 per product. Users now confirm only at intake and before creative direction generation. All other phase transitions auto-advance after presenting output, cutting 3-product briefs from 15 to 4 stop-and-wait moments. Brand profile, research findings, specialist deliverables, and shot lists are presented for visibility but no longer require approval—the creative direction gate bundles all reasoning (brand → research → direction) into one review so users see the full context.\n\n**refactor(schema)**: Increase field length constraints for tone_of_voice, target_demographic (250 chars), and competitor usps_and_complaints (400 chars) to accommodate richer brand and competitive insights.\n\n**refactor(generate-pptx)**: Simplify slide layout by removing decorative header/footer bars from content slides.",
   "userConfig": {
     "DATAFORSEO_LOGIN": {
       "type": "string",
