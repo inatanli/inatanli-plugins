@@ -452,7 +452,7 @@ function deliverablesSummary(product) {
 // ═══════════════════════════════════════════════════════════════════════════
 function buildBriefIntro(product) {
   const slide = pptx.addSlide();
-  slide.background = { color: C.white };
+  slide.background = { color: C.ink };
 
   const brandName   = brand.name || "the brand";
   const deliverables = deliverablesSummary(product);
@@ -469,9 +469,9 @@ function buildBriefIntro(product) {
   ];
 
   slide.addText(runs, {
-    x: M, y: M + 0.3, w: CW, h: SH - M * 2 - 0.3,
-    fontSize: 12, fontFace: F.body, color: C.ink,
-    align: "left", valign: "top",
+    x: M, y: M, w: CW, h: SH - M * 2,
+    fontSize: 12, fontFace: F.heading, color: C.white,
+    align: "left", valign: "middle",
   });
 }
 
