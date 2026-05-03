@@ -11,7 +11,10 @@ description: >
 
 # Creative Brief Generator
 
-Progress through six phases. Ask the user to confirm before moving between phases. Do not auto-advance.
+Progress through six phases. Two confirmation gates only — end of Phase 1 (intake recap) and end of Phase 4a (creative direction, bundled with brand + research recap). All other phase transitions auto-advance after presenting output to the user.
+
+Exceptions to the no-gate policy:
+- **Missing-data questions** still interrupt (e.g., brand-analyst flagging conflicting accent colors, or a researcher script returning sparse/failed data). These are information gaps, not approval gates — surface them and resolve before continuing.
 
 <brief_progress>
 - [ ] Phase 1: Intake — collect project details
@@ -61,7 +64,7 @@ Read [brand-analyst.md](${CLAUDE_PLUGIN_ROOT}/agents/brand-analyst.md) when this
 
 Always runs. Analyzes all available brand inputs — website URL, mood board/visual reference images, or user-provided guidelines. Outputs a brand profile with colors, typography, tone, and visual style. If only intake-collected guidelines are available, the brand-analyst still structures and analyzes them rather than passing them through raw.
 
-Before moving on: present the extracted brand profile and ask the user to confirm or adjust. Then write updated JSON (with `brand.guidelines`) to disk.
+Present the extracted brand profile briefly (so the user has visibility), write updated JSON (with `brand.guidelines`) to disk, and continue to Phase 3 without waiting for approval. The brand profile will be re-surfaced as part of the Phase 4a bundled review. If brand-analyst flags ambiguities (conflicting colors, missing accents, etc.), resolve those as missing-data questions before continuing.
 
 ## Phase 3: Research (per product, sequential)
 
@@ -74,9 +77,8 @@ For each product, complete these steps in strict sequence. Do not start a step u
 <per_product_research>
 - [ ] Step 3a: Product Researcher — fetches listing + keywords
 - [ ] Step 3b: Competitor Analyst — fetches top 3 competitors + images
-- [ ] Step 3c: Present findings to user
-- [ ] Step 3d: User confirms findings
-- [ ] Step 3e: Write JSON to disk
+- [ ] Step 3c: Present findings to user (no gate — context for Phase 4a review)
+- [ ] Step 3d: Write JSON to disk
 </per_product_research>
 
 ### Step 3a: Product Researcher
@@ -106,22 +108,21 @@ Present a summary to the user:
 - Competitor landscape — each competitor with name, price, rating, USPs, and ALL images inline
 - Gap analysis findings
 
-Ask: "Please review the research findings above. Confirm to proceed, or let me know what to adjust." Do not proceed until the user confirms.
+These findings are presented as context — they will be re-surfaced as the basis for the upcoming creative direction in Phase 4a, where the user will review and confirm. Do not gate here. If a researcher script failed or returned sparse data, flag that to the user as a data-quality issue (not an approval request) before continuing.
 
-### Step 3e: Write research to JSON
+### Step 3d: Write research to JSON
 
-After user confirmation, write updated JSON with `research` filled in for this product.
+Write updated JSON with `research` filled in for this product, then continue to Phase 4.
 
 ## Phase 4: Creative Strategy (per product, sequential)
 
 <per_product_strategy>
 - [ ] Step 4a: Creative Director — unified narrative + structured visual direction
-- [ ] Step 4b: Present creative direction to user
+- [ ] Step 4b: Present bundled review (brand recap + research highlights + creative direction) — **GATE**
 - [ ] Step 4c: User confirms creative direction
 - [ ] Step 4d: Run specialists matching project scope
-- [ ] Step 4e: Present specialist deliverables to user
-- [ ] Step 4f: User confirms specialist deliverables
-- [ ] Step 4g: Write JSON to disk
+- [ ] Step 4e: Present specialist deliverables to user (no gate)
+- [ ] Step 4f: Write JSON to disk
 </per_product_strategy>
 
 ### Step 4a: Creative Director
@@ -132,15 +133,21 @@ Read [creative-director.md](${CLAUDE_PLUGIN_ROOT}/agents/creative-director.md).
 - Outputs `positioning_statement`, `key_messages`, `visual_direction` (six required sub-fields), `competitive_differentiation`.
 - The `visual_direction` object is the visual DNA that Phase 5 inherits verbatim.
 
-### Step 4b: Present creative direction
+### Step 4b: Present bundled review — **GATE**
 
-Present to the user:
-- Positioning statement
-- Key messages (each tied to a research insight)
-- Visual direction (all 6 fields: color_world, lighting_signature, model_direction, prop_styling, environment_surface_direction, mood)
-- Competitive differentiation
+This is the load-bearing review of the brief. It bundles the reasoning chain (brand → research → direction) into one moment so the user can correct any link before specialists fan out.
 
-Ask: "Please review the creative direction above. Confirm to proceed to specialist deliverables, or let me know what to adjust." Do not proceed until the user confirms.
+Present to the user, in this order:
+- **Brand profile recap** — 1–2 lines summarizing the analyzed brand profile (colors, tone, visual style)
+- **Research highlights** — the 2–4 key insights driving this direction (top keywords with `visual_implication`, key competitor patterns, gap analysis)
+- **Positioning statement**
+- **Key messages** (each tied to a specific research insight)
+- **Visual direction** (all 6 fields: color_world, lighting_signature, model_direction, prop_styling, environment_surface_direction, mood)
+- **Competitive differentiation**
+
+Ask: "Confirm this direction to generate specialist deliverables and shot list, or tell me what to adjust." Do not proceed until the user confirms.
+
+For multi-product briefs, this gate fires **once per product** — each product gets its own bundled review.
 
 ### Step 4d: Run specialists
 
@@ -156,13 +163,11 @@ Specialists produce `visual_concept` and `strategy` per deliverable. They do **n
 
 ### Step 4e: Present specialist deliverables
 
-For each deliverable, present: visual concept, copy (if applicable), and strategic rationale.
+Present specialist output as a single block so the user has visibility — for each deliverable: visual concept, copy (if applicable), and strategic rationale. Do not gate here; specialists are mechanical translation of the already-confirmed creative direction. Continue to Phase 5 after presenting.
 
-Ask: "Please review the specialist deliverables above. Confirm to proceed, or let me know what to adjust." Do not proceed until the user confirms.
+### Step 4f: Write creative strategy to JSON
 
-### Step 4g: Write creative strategy to JSON
-
-After user confirmation, write updated JSON with `creative_direction` and `deliverables` filled in for this product.
+Write updated JSON with `creative_direction` and `deliverables` filled in for this product, then continue to Phase 5.
 
 ## Phase 5: Shot List (per product, sequential)
 
@@ -172,9 +177,8 @@ The shot-list-director is the only agent in the workflow that authors text-to-im
 
 <per_product_shot_list>
 - [ ] Step 5a: Shot List Director — generates prompts scoped to deliverables in this product's scope
-- [ ] Step 5b: Present shot list to user
-- [ ] Step 5c: User confirms shot list
-- [ ] Step 5d: Write JSON to disk
+- [ ] Step 5b: Present shot list to user (no gate)
+- [ ] Step 5c: Write JSON to disk
 </per_product_shot_list>
 
 ### Step 5a: Shot List Director
@@ -191,11 +195,11 @@ Valid shot type keys: `studio_plain`, `studio_styled`, `lifestyle_tight`, `lifes
 
 Present per shot type: option_id, prompt (full text), lighting, shadows, surface_material, color_temperature, aspect_ratio, resolution, camera, fits_deliverables.
 
-Ask: "Please review the shot list above. Confirm to proceed, or let me know what to adjust." Do not proceed until the user confirms.
+The shot list is a mechanical fan-out from the already-confirmed creative direction and deliverables. Do not gate here; continue to Phase 6 after presenting.
 
-### Step 5d: Write shot list to JSON
+### Step 5c: Write shot list to JSON
 
-After user confirmation, write updated JSON with `shot_list` filled in for this product.
+Write updated JSON with `shot_list` filled in for this product, then continue to Phase 6.
 
 ## Phase 6: Validate + Generate
 
