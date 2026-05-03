@@ -199,7 +199,8 @@
               }
             },
             "tone_of_voice": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 250
             },
             "brand_descriptors": {
               "type": "array",
@@ -210,7 +211,8 @@
               "maxItems": 3
             },
             "target_demographic": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 250
             },
             "hard_rules": {
               "type": "object",
@@ -370,7 +372,7 @@
                     "usps_and_complaints": {
                       "type": "string",
                       "description": "1–3 sentence natural-language summary combining the competitor's top USPs and top complaints. E.g. 'Known for X and Y. Buyers complain about Z.'",
-                      "maxLength": 220
+                      "maxLength": 400
                     },
                     "usps": {
                       "type": "array",
