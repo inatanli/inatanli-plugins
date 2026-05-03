@@ -17,7 +17,7 @@ If the user has already indicated the product type (e.g. "help me write a brief 
 
 ## What to Collect
 
-Ask these one at a time, in order. Wait for the user's answer before asking the next question.
+Ask the following intake questions in one go:
 
 ### Brand Info
 - **Brand name** (required)
@@ -42,7 +42,7 @@ Note: brand analysis always runs in Phase 2, regardless of how guidelines are so
   Default to **US** if the user doesn't specify. Store the ISO code (e.g. `US`, `CA`, `GB`). All API calls for this brief use this marketplace.
 
 - **Products** — for each product, collect based on product type:
-  - **Existing product:** ASIN (required), product name, product description (key features, target use case)
+  - **Existing product:** ASIN (required), any product details, USPs, etc. that the user wants to highlight.
   - **New product:** product name, description, USPs, target audience, and optionally an inspo ASIN
   - Variations or base only?
 - **Deliverables per product** (any combination of these three):
