@@ -17,6 +17,50 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Image helpers ──────────────────────────────────────────────────────────
+
+function imageDimensions(buf) {
+  // PNG: signature 8 bytes, IHDR chunk at offset 8; width at 16, height at 20
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    if (w > 0 && h > 0) return { width: w, height: h };
+  }
+  // JPEG: scan for SOF markers
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let i = 2;
+    while (i + 3 < buf.length) {
+      if (buf[i] !== 0xff) break;
+      const marker = buf[i + 1];
+      const len = buf.readUInt16BE(i + 2);
+      if ([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)) {
+        const h = buf.readUInt16BE(i + 5);
+        const w = buf.readUInt16BE(i + 7);
+        if (w > 0 && h > 0) return { width: w, height: h };
+      }
+      i += 2 + len;
+    }
+  }
+  // WebP: RIFF????WEBP header
+  if (buf.length > 12 && buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WEBP") {
+    const chunk = buf.toString("ascii", 12, 16);
+    if (chunk === "VP8 " && buf.length > 29) {
+      const w = (buf.readUInt16LE(26) & 0x3fff) + 1;
+      const h = (buf.readUInt16LE(28) & 0x3fff) + 1;
+      if (w > 0 && h > 0) return { width: w, height: h };
+    } else if (chunk === "VP8L" && buf.length > 21) {
+      const bits = buf.readUInt32LE(21);
+      const w = (bits & 0x3fff) + 1;
+      const h = ((bits >> 14) & 0x3fff) + 1;
+      if (w > 0 && h > 0) return { width: w, height: h };
+    } else if (chunk === "VP8X" && buf.length > 30) {
+      const w = buf.readUIntLE(24, 3) + 1;
+      const h = buf.readUIntLE(27, 3) + 1;
+      if (w > 0 && h > 0) return { width: w, height: h };
+    }
+  }
+  return { width: 1, height: 1 };
+}
+
 async function fetchAsBase64(url) {
   try {
     const res = await fetch(url);
@@ -27,7 +71,9 @@ async function fetchAsBase64(url) {
     const contentType = res.headers.get("content-type") || "image/jpeg";
     const mime = contentType.split(";")[0].trim();
     const buf = Buffer.from(await res.arrayBuffer());
-    return `${mime};base64,${buf.toString("base64")}`;
+    const { width, height } = imageDimensions(buf);
+    const ar = width / height;
+    return { data: `${mime};base64,${buf.toString("base64")}`, ar };
   } catch (e) {
     console.error(JSON.stringify({ warn: `Image fetch failed: ${url} — ${e.message}` }));
     return null;
@@ -49,10 +95,10 @@ async function prefetchAllImages(brief) {
   for (let i = 0; i < allUrls.length; i += 10) {
     const batch = allUrls.slice(i, i + 10);
     const results = await Promise.allSettled(
-      batch.map(async (u) => ({ url: u, data: await fetchAsBase64(u) }))
+      batch.map(async (u) => ({ url: u, entry: await fetchAsBase64(u) }))
     );
     for (const r of results) {
-      if (r.status === "fulfilled" && r.value.data) cache.set(r.value.url, r.value.data);
+      if (r.status === "fulfilled" && r.value.entry) cache.set(r.value.url, r.value.entry);
     }
   }
   console.error(JSON.stringify({ info: `Prefetched ${cache.size}/${urls.size} images as base64` }));
@@ -482,21 +528,22 @@ function buildProductOverview(product) {
   const startY   = (SH - blockH) / 2;
 
   // ── Left: 2×3 image grid, also vertically centered ──
-  const imgGridH = leftW * (2 / 3); // 2 rows of square cells
-  const imgStartY = (SH - imgGridH) / 2;
+  const imgCols    = 3;
+  const cellW      = leftW / imgCols;
+  const cellH      = cellW;  // row height stays square; image width follows aspect ratio
+  const imgGridH   = cellH * 2;
+  const imgStartY  = (SH - imgGridH) / 2;
   if (prodData.image_urls?.length) {
-    const imgCols  = 3;
     const imgCount = Math.min(prodData.image_urls.length, 6);
-    const cellW    = leftW / imgCols;
-    const cellH    = cellW;
     let imgX = M, imgY = imgStartY, col = 0;
     for (const url of prodData.image_urls.slice(0, imgCount)) {
-      const imgData = imageCache.get(url);
-      if (imgData) {
-        slide.addImage({
-          data: imgData, x: imgX, y: imgY,
-          sizing: { type: "contain", w: cellW - 0.04, h: cellH - 0.04 },
-        });
+      const entry = imageCache.get(url);
+      if (entry) {
+        const ar  = entry.ar ?? 1;
+        const iH  = cellH - 0.04;
+        const iW  = iH * ar;
+        const iX  = imgX + (cellW - iW) / 2;
+        slide.addImage({ data: entry.data, x: iX, y: imgY + 0.02, w: iW, h: iH });
       }
       col++;
       if (col >= imgCols) { col = 0; imgY += cellH; imgX = M; }
@@ -754,10 +801,14 @@ function buildCompetitorLandscape(product) {
     // Image above the card, centered horizontally in the column
     const firstImg = comp.image_urls?.[0];
     if (firstImg && imageCache.get(firstImg)) {
+      const entry = imageCache.get(firstImg);
+      const ar    = entry.ar ?? 1;
+      const iH    = imgSize;
+      const iW    = iH * ar;
       slide.addImage({
-        data: imageCache.get(firstImg),
-        x: cx + (colW - imgSize) / 2, y: imgY,
-        sizing: { type: "contain", w: imgSize, h: imgSize },
+        data: entry.data,
+        x: cx + (colW - iW) / 2, y: imgY,
+        w: iW, h: iH,
       });
     }
 
@@ -856,15 +907,19 @@ function buildCompetitorListingImages(competitors) {
     const gridX = M + i * (gridW + COMP_GAP) + (gridW - gridActualW) / 2;
 
     comp.image_urls.slice(0, GRID_COLS * GRID_ROWS).forEach((url, j) => {
-      const imgData = imageCache.get(url);
-      if (!imgData) return;
-      const col = j % GRID_COLS;
-      const row = Math.floor(j / GRID_COLS);
+      const entry = imageCache.get(url);
+      if (!entry) return;
+      const col  = j % GRID_COLS;
+      const row  = Math.floor(j / GRID_COLS);
+      const ar   = entry.ar ?? 1;
+      const iH   = cellSize;
+      const iW   = iH * ar;
+      const cellX = gridX + col * (cellSize + IMG_GAP);
       slide.addImage({
-        data: imgData,
-        x: gridX + col * (cellSize + IMG_GAP),
+        data: entry.data,
+        x: cellX + (cellSize - iW) / 2,
         y: gridStartY + row * (cellSize + IMG_GAP),
-        sizing: { type: "contain", w: cellSize, h: cellSize },
+        w: iW, h: iH,
       });
     });
   });
