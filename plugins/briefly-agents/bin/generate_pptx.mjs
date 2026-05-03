@@ -641,7 +641,7 @@ function buildKeyUsps(product) {
   if (complaints.length) {
     const cx = xOf(2);
     label(slide, "Top Complaints", cx, ROW2_Y, tileW, C.orangeDeep);
-    slide.addText(complaints.slice(0, 4).map((c) => `·  ${c}`).join("\n"), {
+    slide.addText(complaints.slice(0, 4).map((c) => `·    ${c}`).join("\n"), {
       x: cx, y: ROW2_Y + 0.28, w: tileW, h: PILL_H - 0.28,
       fontSize: T.caption, fontFace: F.body, color: C.ink, valign: "top", shrinkText: true,
     });
