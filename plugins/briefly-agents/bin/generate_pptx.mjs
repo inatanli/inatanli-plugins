@@ -1105,7 +1105,7 @@ function buildMainImageOverview(versions) {
 
   // Fixed height budgets sized for worst-case line counts
   const NUM_H   = 0.42;  // version number — 1 line at 24pt
-  const NAME_H  = 0.52;  // strategy name — 2 lines at 14pt (~0.24in/line)
+  const NAME_H  = 0.78;  // strategy name — 3 lines at 14pt (~0.26in/line)
   const FEAT_H  = 1.30;  // feature — 7 lines at 10pt (~0.18in/line)
   const STRAT_H = 0.68;  // strategy body — 4 lines at 8pt (~0.15in/line)
 
@@ -1128,7 +1128,7 @@ function buildMainImageOverview(versions) {
     });
     cy += NUM_H;
 
-    // Strategy name — 14pt, 2-line budget
+    // Strategy name — 14pt, 3-line budget
     if (v.strategy_name) {
       slide.addText(v.strategy_name, {
         x: bx + PAD, y: cy, w: sz - PAD * 2, h: NAME_H,
