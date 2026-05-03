@@ -178,14 +178,6 @@ function darkSlide() {
 function contentSlide(title, opts = {}) {
   const slide = pptx.addSlide();
   slide.background = { color: C.white };
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: 0, w: SW, h: 0.055,
-    fill: { color: C.orange }, line: { color: C.orange, width: 0 },
-  });
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: SH - 0.04, w: SW, h: 0.04,
-    fill: { color: C.orangeDeep }, line: { color: C.orangeDeep, width: 0 },
-  });
   if (title) {
     slide.addText(title, {
       x: M, y: 0.18, w: CW, h: 0.52,
@@ -200,14 +192,6 @@ function contentSlide(title, opts = {}) {
 function blankContentSlide() {
   const slide = pptx.addSlide();
   slide.background = { color: C.white };
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: 0, w: SW, h: 0.055,
-    fill: { color: C.orange }, line: { color: C.orange, width: 0 },
-  });
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: SH - 0.04, w: SW, h: 0.04,
-    fill: { color: C.orangeDeep }, line: { color: C.orangeDeep, width: 0 },
-  });
   return slide;
 }
 
@@ -262,10 +246,6 @@ function buildCover() {
     align: "center", transparency: 40,
   });
 
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: SH - 0.06, w: SW, h: 0.06,
-    fill: { color: C.orangeDeep }, line: { color: C.orangeDeep, width: 0 },
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -410,6 +390,46 @@ function buildBrandGuidelines() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Deliverables summary string (shared by intro slide + what-we're-making)
+// ═══════════════════════════════════════════════════════════════════════════
+function deliverablesSummary(product) {
+  const deliverables = product?.deliverables || {};
+  const parts = [];
+  if (deliverables.main_image?.length) parts.push("1 Main Image");
+  if (deliverables.listing_images?.images?.length) parts.push(`${deliverables.listing_images.images.length} Listing Images`);
+  if (deliverables.aplus?.modules?.length) parts.push(`${Math.min(deliverables.aplus.modules.length, 6)} A+ Modules`);
+  return parts.join(", ");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SLIDE — Brief Intro (inserted after cover)
+// ═══════════════════════════════════════════════════════════════════════════
+function buildBriefIntro(product) {
+  const slide = pptx.addSlide();
+  slide.background = { color: C.white };
+
+  const brandName   = brand.name || "the brand";
+  const deliverables = deliverablesSummary(product);
+
+  const runs = [
+    { text: `This creative brief outlines the strategic direction for the ${brandName} Amazon listing. It covers the research and competitive analysis that informed our creative decisions, the visual direction we're taking, and the specific images we'll produce for the ${deliverables} and asset library.`, options: { breakLine: true } },
+    { text: " ", options: { breakLine: true } },
+    { text: "What you'll see in this brief:", options: { breakLine: true } },
+    { text: "Product research, market data, and competitive landscape", options: { bullet: true, breakLine: true } },
+    { text: `How we're positioning ${brandName} against competitors`, options: { bullet: true, breakLine: true } },
+    { text: "The visual direction and brand application", options: { bullet: true, breakLine: true } },
+    { text: `${deliverables} with rationale`, options: { bullet: true, breakLine: true } },
+    { text: "Asset shot list for production", options: { bullet: true, breakLine: false } },
+  ];
+
+  slide.addText(runs, {
+    x: M, y: M + 0.3, w: CW, h: SH - M * 2 - 0.3,
+    fontSize: 12, fontFace: F.body, color: C.ink,
+    align: "left", valign: "top",
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Per-product section dispatcher
 // ═══════════════════════════════════════════════════════════════════════════
 function buildProduct(product) {
@@ -444,7 +464,8 @@ function buildProduct(product) {
 // ═══════════════════════════════════════════════════════════════════════════
 function buildProductOverview(product) {
   const prodData = product.research?.product || {};
-  const slide    = blankContentSlide();
+  const slide    = pptx.addSlide();
+  slide.background = { color: C.orange };
 
   const leftW  = CW * 0.42;
   const rightX = M + leftW + 0.35;
@@ -483,13 +504,13 @@ function buildProductOverview(product) {
     }
   }
 
-  vDivider(slide, rightX - 0.175, startY, blockH, C.border);
+  vDivider(slide, rightX - 0.175, startY, blockH, C.white);
 
   let ry = startY;
 
   slide.addText(product.name || "", {
     x: rightX, y: ry, w: rightW, h: NAME_H,
-    fontSize: T.subhead, fontFace: F.heading, color: C.orange,
+    fontSize: T.subhead, fontFace: F.heading, color: C.white,
     bold: true, valign: "top",
   });
   ry += NAME_H;
@@ -497,7 +518,7 @@ function buildProductOverview(product) {
   if (product.asin) {
     slide.addText(`ASIN: ${product.asin}`, {
       x: rightX, y: ry, w: rightW, h: 0.24,
-      fontSize: T.data, fontFace: F.body, color: C.orange, valign: "top", shrinkText: true,
+      fontSize: T.data, fontFace: F.body, color: C.white, valign: "top", shrinkText: true,
     });
     ry += ASIN_H;
   }
@@ -509,18 +530,18 @@ function buildProductOverview(product) {
     ].filter(Boolean).join("   |   ");
     slide.addText(meta, {
       x: rightX, y: ry, w: rightW, h: 0.3,
-      fontSize: T.body, fontFace: F.body, color: C.ink, bold: true, valign: "top", shrinkText: true,
+      fontSize: T.body, fontFace: F.body, color: C.white, bold: true, valign: "top", shrinkText: true,
     });
     ry += META_H;
   }
 
-  divider(slide, rightX, ry, rightW, C.border, 0.5);
+  divider(slide, rightX, ry, rightW, C.white, 0.5);
   ry += DIV_H;
 
   if (prodData.description) {
     slide.addText(prodData.description, {
       x: rightX, y: ry, w: rightW, h: DESC_H,
-      fontSize: T.caption, fontFace: F.body, color: C.ink,
+      fontSize: T.caption, fontFace: F.body, color: C.white,
       valign: "top", shrinkText: true,
     });
   }
@@ -536,33 +557,39 @@ function buildKeyUsps(product) {
   if (!usps.length && !complaints.length) return;
 
   const slide    = contentSlide("Key USPs and Top Complaints");
-  const PILL_H   = 1.4;
   const PILL_GAP = 0.15;
+  const PILL_H   = (SH - CONTENT_Y - PILL_GAP - 0.12) / 2;
   const ROW1_Y   = CONTENT_Y;
   const ROW2_Y   = ROW1_Y + PILL_H + PILL_GAP;
 
   const tileW = (CW - PILL_GAP * 2) / 3;
   const xOf   = (col) => M + col * (tileW + PILL_GAP);
 
-  const drawUspPill = (text, x, y) => {
+  const NUM_H  = 0.55;
+  const drawUspPill = (text, x, y, num) => {
     slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
       x, y, w: tileW, h: PILL_H,
       fill: { color: C.orange }, line: { color: C.orange, width: 0 },
       rectRadius: 0.12,
     });
+    slide.addText(String(num), {
+      x: x + 0.12, y: y + 0.1, w: tileW - 0.24, h: NUM_H,
+      fontSize: T.display, fontFace: F.heading, color: C.white,
+      bold: true, align: "center", valign: "top",
+    });
     slide.addText(text, {
-      x: x + 0.12, y: y + 0.12, w: tileW - 0.24, h: PILL_H - 0.24,
+      x: x + 0.12, y: y + NUM_H + 0.1, w: tileW - 0.24, h: PILL_H - NUM_H - 0.2,
       fontSize: T.body, fontFace: F.body, color: C.white,
-      align: "center", valign: "middle", bold: false, shrinkText: true,
+      align: "center", valign: "top", bold: false, shrinkText: true,
     });
   };
 
   // Row 1: USPs 1–3
-  usps.slice(0, 3).forEach((usp, i) => drawUspPill(usp, xOf(i), ROW1_Y));
+  usps.slice(0, 3).forEach((usp, i) => drawUspPill(usp, xOf(i), ROW1_Y, i + 1));
 
   // Row 2: USPs 4–5 + Top Complaints (text only, same dimensions)
   const row2Usps = usps.slice(3, 5);
-  row2Usps.forEach((usp, i) => drawUspPill(usp, xOf(i), ROW2_Y));
+  row2Usps.forEach((usp, i) => drawUspPill(usp, xOf(i), ROW2_Y, i + 4));
 
   if (complaints.length) {
     const cx = xOf(2);
@@ -597,14 +624,10 @@ function buildKeywordsVisualPatterns(product) {
     const ky  = CONTENT_Y + row * (cellH + GRID_GAP);
     const isHero = i === 0;
 
-    slide.addShape(pptx.shapes.RECTANGLE, {
-      x: kx, y: ky, w: cellW, h: cellH,
-      fill: { color: C.neutral }, line: { color: C.border, width: 0.75 },
-    });
     slide.addText(kw.keyword || "", {
       x: kx + 0.12, y: ky + 0.08, w: cellW - 0.24, h: cellH * 0.55,
       fontSize: isHero ? T.section : T.body,
-      fontFace: F.heading, color: C.ink,
+      fontFace: F.heading, color: C.orange,
       bold: true, align: "center", valign: "middle", shrinkText: true,
     });
     const vol = kw.average_monthly_search_volume
@@ -613,7 +636,7 @@ function buildKeywordsVisualPatterns(product) {
     if (vol) {
       slide.addText(vol, {
         x: kx + 0.12, y: ky + cellH * 0.65, w: cellW - 0.24, h: cellH * 0.3,
-        fontSize: T.caption, fontFace: F.body, color: C.orange,
+        fontSize: T.caption, fontFace: F.body, color: C.ink,
         align: "center", valign: "top", shrinkText: true,
       });
     }
@@ -695,17 +718,13 @@ function buildVisualImplication(product) {
   if (!vi) return;
 
   const slide = darkSlide();
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: 0, w: 0.5, h: SH,
-    fill: { color: C.orange }, line: { color: C.orange, width: 0 },
-  });
   slide.addText("THE OPPORTUNITY", {
-    x: 0.9, y: 0.7, w: SW - 1.3, h: 0.3,
-    fontSize: T.caption, fontFace: F.body, color: C.orange,
+    x: M, y: 0.3, w: CW, h: 0.7,
+    fontSize: 36, fontFace: F.heading, color: C.orange,
     bold: true, charSpacing: 3, align: "left",
   });
   slide.addText(vi, {
-    x: 0.9, y: 1.1, w: SW - 1.3, h: SH - 2.0,
+    x: M, y: 1.15, w: CW, h: SH - 1.35,
     fontSize: T.section, fontFace: F.heading, color: C.white,
     bold: false, align: "left", valign: "middle", shrinkText: true,
   });
@@ -788,19 +807,6 @@ function buildCompetitorLandscape(product) {
     divider(slide, cx + PAD, iy, colW - PAD * 2, C.border, 0.5);
     iy += 0.12;
 
-    // Full-word stats
-    const statLines = [];
-    if (comp.intersecting_keywords != null) statLines.push(`${comp.intersecting_keywords} intersecting keywords`);
-    if (comp.avg_position          != null) statLines.push(`Average position: ${comp.avg_position}`);
-    if (statLines.length) {
-      slide.addText(statLines.join("\n"), {
-        x: cx + PAD, y: iy, w: colW - PAD * 2, h: 0.5,
-        fontSize: T.data, fontFace: F.body, color: C.ink,
-        align: "center", valign: "top", shrinkText: true,
-      });
-      iy += 0.5;
-    }
-
     if (comp.usps_and_complaints) {
       slide.addText(comp.usps_and_complaints, {
         x: cx + PAD, y: iy, w: colW - PAD * 2, h: cardTop + cardH2 - iy - PAD,
@@ -818,7 +824,7 @@ function buildCompetitorListingImages(competitors) {
   if (!withImages.length) return;
 
   const HEADER_Y     = 0.2;
-  const TITLE_H      = 0.44;
+  const TITLE_H      = 0.6;
   const TOP_OFF      = HEADER_Y + TITLE_H + 0.16;
   const BOTTOM       = SH - 0.12;
   const availH       = BOTTOM - TOP_OFF;
@@ -843,7 +849,7 @@ function buildCompetitorListingImages(competitors) {
   slide.background = { color: "000000" };
   slide.addText("Competitor Listing Images", {
     x: M, y: HEADER_Y, w: CW, h: TITLE_H,
-    fontSize: T.section, fontFace: F.heading, color: C.white, bold: true,
+    fontSize: 36, fontFace: F.heading, color: C.white, bold: true,
   });
 
   withImages.forEach((comp, i) => {
@@ -920,17 +926,17 @@ function buildKeyMessages(product) {
     if (i > 0) vDivider(slide, cx - cardGap / 2, cardY, cardH, C.border);
 
     slide.addText(String(i + 1).padStart(2, "0"), {
-      x: cx, y: cardY, w: cardW, h: 0.52,
-      fontSize: T.display, fontFace: F.heading, color: C.orange,
+      x: cx, y: cardY, w: cardW, h: 0.65,
+      fontSize: 48, fontFace: F.heading, color: C.orange,
       bold: true, align: "center",
     });
 
-    divider(slide, cx, cardY + 0.6, cardW, C.border, 0.75);
+    divider(slide, cx, cardY + 0.73, cardW, C.border, 0.75);
 
     slide.addText(msg, {
-      x: cx, y: cardY + 0.7, w: cardW, h: cardH - 0.7,
+      x: cx + 0.08, y: cardY + 0.83, w: cardW - 0.16, h: cardH - 0.83,
       fontSize: T.body, fontFace: F.body, color: C.ink,
-      align: "center", valign: "top", shrinkText: true,
+      align: "left", valign: "top", shrinkText: true,
     });
   });
 }
@@ -969,10 +975,14 @@ function buildVisualDirection(product) {
     const ty  = 0.88 + row * (tileH + 0.06);
 
     divider(slide, tx, ty, tileW, C.orangeDeep, 0.75);
-    label(slide, lbl, tx, ty + 0.06, tileW, C.orange);
+    slide.addText((lbl || "").toUpperCase(), {
+      x: tx, y: ty + 0.06, w: tileW, h: 0.22,
+      fontSize: 6, fontFace: F.body, color: C.orange,
+      bold: true, charSpacing: 2,
+    });
     slide.addText(val, {
       x: tx, y: ty + 0.3, w: tileW, h: tileH - 0.35,
-      fontSize: 9, fontFace: F.body, color: C.white, valign: "top", shrinkText: true,
+      fontSize: 6, fontFace: F.body, color: C.white, valign: "top", shrinkText: true,
     });
   });
 
@@ -1011,8 +1021,8 @@ function buildWhatWereMaking(product) {
   });
 
   slide.addText(parts.join("  ·  "), {
-    x: M, y: blockY + 0.5, w: CW, h: 1.1,
-    fontSize: T.display, fontFace: F.heading, color: C.white,
+    x: M, y: blockY + 0.5, w: CW, h: 0.7,
+    fontSize: 24, fontFace: F.heading, color: C.white,
     bold: true, align: "center", valign: "middle", shrinkText: true,
   });
 
@@ -1308,10 +1318,6 @@ function buildShotListDivider(product) {
     x: M, y: SH / 2 - 0.3, w: CW, h: 0.6,
     fontSize: 40, fontFace: F.heading, color: C.white, bold: true, align: "right",
   });
-  slide.addShape(pptx.shapes.RECTANGLE, {
-    x: SW - 0.08, y: 0, w: 0.08, h: SH,
-    fill: { color: C.orange }, line: { color: C.orange, width: 0 },
-  });
 
   const noteLines = [];
   for (const key of typeKeys) {
@@ -1386,6 +1392,7 @@ function buildNextSteps() {
   imageCache = await prefetchAllImages(brief);
 
   buildCover();
+  buildBriefIntro((brief.products || [])[0]);
   (brief.products || []).forEach((product, i) => buildProduct(product, i));
   buildNextSteps();
 
